@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Format, types, lint, tests, build, browser
+    name: Format, types, contracts, migrations, tests, build, browser
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -30,6 +30,7 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=high
       - run: npm run check
+      - run: npm run test:performance
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - name: Upload browser evidence

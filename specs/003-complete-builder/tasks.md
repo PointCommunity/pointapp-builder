@@ -4,13 +4,13 @@ Internal workflow state. Human-readable scope and decisions are in the adjacent 
 
 ## Phase 1 — Setup and contract gates
 
-- [ ] T001 Add pinned Hono, Miniflare, OpenAPI lint, and testing dependencies in `package.json` and `package-lock.json`
-- [ ] T002 Add contract, migration, performance, security, and full-check scripts in `package.json`
-- [ ] T003 Configure selective Worker-first API/auth/content/media routes and rate-limit bindings in `wrangler.jsonc`
-- [ ] T004 Add typed Worker bindings and local-only fixture variables in `worker-configuration.d.ts` and `.dev.vars.example`
-- [ ] T005 Add OpenAPI lint configuration in `redocly.yaml`
-- [ ] T006 Add coverage thresholds and test projects for unit/integration tests in `vite.config.ts`
-- [ ] T007 Add CI gates with Node 22, contract, migration, coverage, audit, build, and browser jobs in `.github/workflows/quality.yml`
+- [x] T001 Add pinned Hono, Miniflare, OpenAPI lint, and testing dependencies in `package.json` and `package-lock.json`
+- [x] T002 Add contract, migration, performance, security, and full-check scripts in `package.json`
+- [x] T003 Configure selective Worker-first API/auth/content/media routes and rate-limit bindings in `wrangler.jsonc`
+- [x] T004 Add typed Worker bindings and local-only fixture variables in `worker-configuration.d.ts` and `.dev.vars.example`
+- [x] T005 Add OpenAPI lint configuration in `redocly.yaml`
+- [x] T006 Add coverage thresholds and test projects for unit/integration tests in `vite.config.ts`
+- [x] T007 Add CI gates with Node 22, contract, migration, coverage, audit, build, and browser jobs in `.github/workflows/quality.yml`
 
 ## Phase 2 — Foundational security and persistence
 

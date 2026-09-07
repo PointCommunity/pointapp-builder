@@ -23,10 +23,19 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "check": "npm run format:check && npm run types:check && npm run typecheck && npm run lint -- --max-warnings=0 && npm run test:coverage && npm run build"
+    "test:performance": "vitest run tests/performance",
+    "contract:check": "redocly lint specs/003-complete-builder/contracts/openapi.yaml",
+    "db:migrate:local": "wrangler d1 migrations apply pointapp-builder --local",
+    "db:migrate:remote": "npm run cloudflare:verify-account && wrangler d1 migrations apply pointapp-builder --remote",
+    "db:migrate:test": "vitest run tests/integration/migrations.test.ts",
+    "check:foundation": "vitest run tests/unit/server tests/unit/content/canonical.test.ts tests/integration/migrations.test.ts",
+    "check:experience": "npm run test:performance && playwright test --grep @experience",
+    "check": "npm run format:check && npm run types:check && npm run typecheck && npm run lint -- --max-warnings=0 && npm run contract:check && npm run db:migrate:test && npm run test:coverage && npm run build"
   },
   "dependencies": {
     "@phosphor-icons/react": "2.1.10",
+    "hono": "4.13.7",
+    "jose": "6.2.11",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "4.5.4"
@@ -36,6 +45,7 @@
     "@cloudflare/vite-plugin": "1.54.4",
     "@eslint/js": "9.39.5",
     "@playwright/test": "1.63.0",
+    "@redocly/cli": "2.51.2",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@types/node": "22.19.19",
@@ -48,6 +58,7 @@
     "eslint-plugin-react-refresh": "0.5.2",
     "globals": "16.5.0",
     "jsdom": "30.0.1",
+    "miniflare": "5.20260903.0-alpha",
     "prettier": "3.9.6",
     "tsx": "^4.20.6",
     "typescript": "5.9.3",

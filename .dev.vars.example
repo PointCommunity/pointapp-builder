@@ -1,0 +1,16 @@
+ENVIRONMENT=local
+APP_VERSION=0.1.0-local
+BUILDER_ORIGIN=http://127.0.0.1:5173
+AUTHENTICATION_ENABLED=true
+PUBLISHING_ENABLED=true
+BOOTSTRAP_OWNER_GITHUB_ID=1202831
+REGISTRATION_POLICY=verified-github
+SIGNING_KEY_ID=local-test-key
+
+# Real OAuth and signing material must be stored in .dev.vars locally and as
+# Cloudflare Worker secrets in Production. Never commit actual values.
+GITHUB_CLIENT_ID=replace-me
+GITHUB_CLIENT_SECRET=replace-me
+SESSION_SECRET=replace-with-at-least-32-random-characters
+RELEASE_SIGNING_PRIVATE_JWK=replace-me
+RELEASE_SIGNING_PUBLIC_JWK=replace-me

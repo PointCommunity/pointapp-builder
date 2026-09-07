@@ -1,4 +1,5 @@
 const origin = process.env.POINTAPP_BUILDER_ORIGIN ?? 'https://appbuilder.pointatx.org';
+const httpOrigin = origin.replace(/^https:/, 'http:');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -20,6 +21,15 @@ assert(health.database === 'reachable', 'D1 binding is not reachable.');
 assert(health.authentication === 'disabled', 'Authentication must remain disabled.');
 assert(health.publishing === 'disabled', 'Publishing must remain disabled.');
 
+const redirectResponse = await fetch(new URL('/release-check?device=phone', httpOrigin), {
+  redirect: 'manual',
+});
+assert(redirectResponse.status === 308, `HTTP returned ${redirectResponse.status} instead of 308.`);
+assert(
+  redirectResponse.headers.get('location') === `${origin}/release-check?device=phone`,
+  'HTTP did not redirect to the same HTTPS path.',
+);
+
 for (const path of ['/api/drafts', '/auth/login']) {
   const response = await fetchChecked(path, 503);
   const body = await response.json();
@@ -30,9 +40,9 @@ const documentResponse = await fetchChecked('/');
 const html = await documentResponse.text();
 assert(html.includes('<title>PointApp Builder</title>'), 'Root document is not PointApp Builder.');
 
-const assetPaths = [
-  ...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css)(?:\?[^"']*)?)["']/g),
-].map((match) => match[1]);
+const assetPaths = [...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css)(?:\?[^"']*)?)["']/g)]
+  .map((match) => match[1])
+  .filter((path) => path.startsWith('/assets/'));
 assert(assetPaths.length > 0, 'No compiled JavaScript or CSS assets were found.');
 
 for (const assetPath of new Set(assetPaths)) {
@@ -45,5 +55,5 @@ for (const assetPath of new Set(assetPaths)) {
 }
 
 process.stdout.write(
-  `Verified ${origin}: production health, isolated D1, locked routes, and ${new Set(assetPaths).size} compiled assets.\n`,
+  `Verified ${origin}: HTTPS redirect, production health, isolated D1, locked routes, and ${new Set(assetPaths).size} compiled assets.\n`,
 );

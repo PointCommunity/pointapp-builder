@@ -5,8 +5,12 @@ function environment(databaseResult: 'reachable' | 'unavailable' = 'reachable'):
   return {
     ENVIRONMENT: 'test',
     APP_VERSION: '0.1.0',
+    BUILDER_ORIGIN: 'https://appbuilder.pointatx.org',
     AUTHENTICATION_ENABLED: 'false',
     PUBLISHING_ENABLED: 'false',
+    ASSETS: {
+      fetch: async () => new Response('<!doctype html><title>PointApp Builder</title>'),
+    },
     DB: {
       prepare: () => ({
         first: async () => {
@@ -71,5 +75,33 @@ describe('PointApp Builder Worker boundary', () => {
 
     expect(response.status).toBe(405);
     expect(response.headers.get('allow')).toBe('GET');
+  });
+
+  it('redirects plain HTTP to the same HTTPS path', async () => {
+    const response = await handleRequest(
+      new Request('http://appbuilder.pointatx.org/library?device=tablet'),
+      environment(),
+    );
+
+    expect(response.status).toBe(308);
+    expect(response.headers.get('location')).toBe(
+      'https://appbuilder.pointatx.org/library?device=tablet',
+    );
+  });
+
+  it('delegates non-API HTTPS requests to the static asset binding', async () => {
+    const response = await handleRequest(
+      new Request('https://appbuilder.pointatx.org/library'),
+      environment(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('<title>PointApp Builder</title>');
+  });
+
+  it('does not redirect local HTTP development traffic to unavailable TLS', async () => {
+    const response = await handleRequest(new Request('http://127.0.0.1:4173/'), environment());
+
+    expect(response.status).toBe(200);
   });
 });

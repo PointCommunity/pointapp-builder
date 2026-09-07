@@ -149,6 +149,7 @@
       <h2>Runtime behavior</h2>
       <ul>
         <li><code>GET /api/health</code> returns environment, app version, and D1 reachability.</li>
+        <li>Plain HTTP requests redirect permanently to the same path and query over HTTPS.</li>
         <li>
           Unknown <code>/api/*</code> and <code>/auth/*</code> routes fail closed with a JSON
           <code>503 FOUNDATION_LOCKED</code> response.

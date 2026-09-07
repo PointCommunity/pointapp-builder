@@ -6,10 +6,16 @@ interface DatabaseBinding {
   prepare(query: string): DatabaseStatement;
 }
 
+interface AssetBinding {
+  fetch(request: Request): Promise<Response>;
+}
+
 export interface RuntimeEnv {
   DB: DatabaseBinding;
+  ASSETS: AssetBinding;
   ENVIRONMENT: string;
   APP_VERSION: string;
+  BUILDER_ORIGIN: string;
   AUTHENTICATION_ENABLED: string;
   PUBLISHING_ENABLED: string;
 }
@@ -35,6 +41,12 @@ async function databaseIsReachable(database: DatabaseBinding): Promise<boolean> 
 
 export async function handleRequest(request: Request, env: RuntimeEnv): Promise<Response> {
   const url = new URL(request.url);
+
+  const builderHostname = new URL(env.BUILDER_ORIGIN).hostname;
+  if (url.protocol === 'http:' && url.hostname === builderHostname) {
+    url.protocol = 'https:';
+    return Response.redirect(url, 308);
+  }
 
   if (url.pathname === '/api/health') {
     if (request.method !== 'GET')
@@ -63,7 +75,7 @@ export async function handleRequest(request: Request, env: RuntimeEnv): Promise<
     );
   }
 
-  return json({ code: 'NOT_FOUND' }, 404);
+  return env.ASSETS.fetch(request);
 }
 
 export default {

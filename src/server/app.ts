@@ -1,36 +1,38 @@
 import { Hono } from 'hono';
 import { ProblemError, problemResponse } from './problems';
+import { createAuthDependencies, createAuthRoutes, type AuthDependencies } from './routes/auth';
+import { createMembershipRoutes } from './routes/memberships';
 import { applySecurityHeaders } from './security';
 
-interface HealthStatement {
-  first(): Promise<{ ok?: unknown } | null>;
-}
-
-export interface HealthDatabase {
-  prepare(query: string): HealthStatement;
-}
-
-export interface ServerEnvironment {
-  DB: HealthDatabase;
+export interface ApiEnvironment {
+  DB: D1Database;
   ENVIRONMENT: string;
   APP_VERSION: string;
+  BUILDER_ORIGIN: string;
   AUTHENTICATION_ENABLED: string;
   PUBLISHING_ENABLED: string;
+  BOOTSTRAP_OWNER_GITHUB_ID: string;
+  AUTH_RATE_LIMITER?: RateLimit;
+  MUTATION_RATE_LIMITER?: RateLimit;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  SESSION_SECRET?: string;
 }
 
-type Variables = { requestId: string };
+export type ApiVariables = { requestId: string };
 
-async function databaseStatus(database: ServerEnvironment['DB']): Promise<'ok' | 'unavailable'> {
+async function databaseStatus(database: D1Database): Promise<'ok' | 'unavailable'> {
   try {
-    const result = await database.prepare('SELECT 1 AS ok').first();
+    const result = await database.prepare('SELECT 1 AS ok').first<{ ok: number }>();
     return result?.ok === 1 ? 'ok' : 'unavailable';
   } catch {
     return 'unavailable';
   }
 }
 
-export function createServerApp(environment: ServerEnvironment) {
-  const app = new Hono<{ Variables: Variables }>();
+export function createServerApp(environment: ApiEnvironment, providedAuth?: AuthDependencies) {
+  const app = new Hono<{ Variables: ApiVariables }>();
+  const auth = providedAuth ?? createAuthDependencies(environment);
 
   app.use('*', async (context, next) => {
     const requestId = crypto.randomUUID();
@@ -68,6 +70,9 @@ export function createServerApp(environment: ServerEnvironment) {
     response.headers.set('allow', 'GET');
     return response;
   });
+
+  app.route('/', createAuthRoutes(environment, auth));
+  app.route('/', createMembershipRoutes(environment, auth));
 
   app.notFound(() => {
     throw new ProblemError(404, 'NOT_FOUND', 'The requested operation does not exist');

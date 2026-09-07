@@ -3,27 +3,37 @@ import { describe, expect, it } from 'vitest';
 import { App } from '../../src/client/App';
 
 describe('PointApp Builder foundation shell', () => {
-  it('keeps release actions disconnected and follows the selected role policy', () => {
-    render(<App />);
+  const session = {
+    state: 'active' as const,
+    membership: {
+      githubUserId: '1202831',
+      login: 'brimdor',
+      displayName: 'Chris',
+      avatarUrl: null,
+      role: 'owner' as const,
+      status: 'active' as const,
+      version: 1,
+      requestedAt: '2026-09-07T12:00:00.000Z',
+      approvedAt: '2026-09-07T12:00:00.000Z',
+      disabledAt: null,
+    },
+    capabilities: ['staging:publish', 'production:promote'] as const,
+  };
+
+  it('uses the authenticated role and has no role-switching control', () => {
+    render(<App initialSession={session} />);
     fireEvent.click(screen.getByRole('button', { name: 'Releases' }));
 
     const staging = screen.getByRole('button', { name: 'Publish to Staging' });
     const production = screen.getByRole('button', { name: 'Promote Staging to Production' });
-    expect(staging).toBeDisabled();
-    expect(production).toBeDisabled();
-
-    fireEvent.change(screen.getByLabelText('Foundation role'), { target: { value: 'publisher' } });
     expect(staging).toBeEnabled();
-    expect(production).toBeDisabled();
-
-    fireEvent.change(screen.getByLabelText('Foundation role'), {
-      target: { value: 'administrator' },
-    });
     expect(production).toBeEnabled();
+    expect(screen.queryByLabelText('Foundation role')).not.toBeInTheDocument();
+    expect(screen.getByText('@brimdor')).toBeVisible();
   });
 
   it('switches the shared staging preview between phone and tablet frames', () => {
-    render(<App />);
+    render(<App initialSession={session} />);
     const preview = screen.getByTestId('app-preview');
     expect(preview).toHaveAttribute('data-device', 'phone');
 
@@ -32,7 +42,7 @@ describe('PointApp Builder foundation shell', () => {
   });
 
   it('exposes each planned panel independently', () => {
-    render(<App />);
+    render(<App initialSession={session} />);
     for (const label of [
       'Content',
       'Library',

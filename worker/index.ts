@@ -1,14 +1,14 @@
-import { createServerApp, type ServerEnvironment } from '../src/server/app';
+import { createServerApp, type ApiEnvironment } from '../src/server/app';
 import { applySecurityHeaders } from '../src/server/security';
 
 interface AssetBinding {
   fetch(request: Request): Promise<Response>;
 }
 
-export interface RuntimeEnv extends ServerEnvironment {
+export interface RuntimeEnv extends ApiEnvironment {
   ASSETS: AssetBinding;
   BUILDER_ORIGIN: string;
-  BOOTSTRAP_OWNER_GITHUB_ID?: string;
+  BOOTSTRAP_OWNER_GITHUB_ID: string;
   REGISTRATION_POLICY?: string;
   SIGNING_KEY_ID?: string;
   AUTH_RATE_LIMITER?: RateLimit;
@@ -30,8 +30,12 @@ function isServerRoute(pathname: string): boolean {
 
 export async function handleRequest(request: Request, env: RuntimeEnv): Promise<Response> {
   const url = new URL(request.url);
-  const builderHostname = new URL(env.BUILDER_ORIGIN).hostname;
-  if (url.protocol === 'http:' && url.hostname === builderHostname) {
+  const builderUrl = new URL(env.BUILDER_ORIGIN);
+  if (
+    builderUrl.protocol === 'https:' &&
+    url.protocol === 'http:' &&
+    url.hostname === builderUrl.hostname
+  ) {
     url.protocol = 'https:';
     return Response.redirect(url, 308);
   }

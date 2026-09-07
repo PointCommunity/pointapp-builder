@@ -6,8 +6,8 @@ function environment(databaseResult: 'reachable' | 'unavailable' = 'reachable'):
     ENVIRONMENT: 'test',
     APP_VERSION: '0.1.0',
     BUILDER_ORIGIN: 'https://appbuilder.pointatx.org',
-    AUTHENTICATION_ENABLED: 'false',
-    PUBLISHING_ENABLED: 'false',
+    AUTHENTICATION_ENABLED: 'true',
+    PUBLISHING_ENABLED: 'true',
     ASSETS: {
       fetch: async () => new Response('<!doctype html><title>PointApp Builder</title>'),
     },
@@ -18,7 +18,8 @@ function environment(databaseResult: 'reachable' | 'unavailable' = 'reachable'):
           return { ok: 1 };
         },
       }),
-    },
+    } as unknown as D1Database,
+    BOOTSTRAP_OWNER_GITHUB_ID: '1202831',
   };
 }
 
@@ -31,14 +32,15 @@ describe('PointApp Builder Worker boundary', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');
-    expect(await response.json()).toEqual({
-      ok: true,
+    expect(await response.json()).toMatchObject({
+      status: 'ok',
+      service: 'pointapp-builder',
       environment: 'test',
       version: '0.1.0',
-      database: 'reachable',
-      authentication: 'disabled',
-      publishing: 'disabled',
+      checks: { database: 'ok', authentication: 'ok', publishing: 'ok' },
     });
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(response.headers.get('x-request-id')).toMatch(/^[0-9a-f-]{36}$/);
   });
 
   it('fails health checks when D1 is unavailable', async () => {
@@ -48,24 +50,28 @@ describe('PointApp Builder Worker boundary', () => {
     );
 
     expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ ok: false, database: 'unavailable' });
+    expect(await response.json()).toMatchObject({
+      status: 'degraded',
+      checks: { database: 'unavailable' },
+    });
   });
 
-  it.each(['/api/drafts', '/auth/login'])(
-    'fails closed for unimplemented route %s',
-    async (path) => {
-      const response = await handleRequest(
-        new Request(`https://appbuilder.pointatx.org${path}`),
-        environment(),
-      );
+  it.each([
+    ['/api/drafts', 404, 'NOT_FOUND'],
+    ['/auth/login', 503, 'AUTH_UNAVAILABLE'],
+    ['/content/v1/channels/production', 404, 'NOT_FOUND'],
+  ])('returns a safe problem for unavailable route %s', async (path, status, code) => {
+    const response = await handleRequest(
+      new Request(`https://appbuilder.pointatx.org${path}`),
+      environment(),
+    );
 
-      expect(response.status).toBe(503);
-      expect(await response.json()).toEqual({
-        code: 'FOUNDATION_LOCKED',
-        message: 'Authentication and content mutations are not configured.',
-      });
-    },
-  );
+    expect(response.status).toBe(status);
+    expect(await response.json()).toMatchObject({
+      status,
+      code,
+    });
+  });
 
   it('allows only GET for the health endpoint', async () => {
     const response = await handleRequest(

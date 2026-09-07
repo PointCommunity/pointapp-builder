@@ -15,9 +15,12 @@ import {
   ShieldCheck,
   Users,
 } from '@phosphor-icons/react';
-import { useState, type ComponentType } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
+import { loadSession, signOut, type SessionView } from './api';
+import { SessionGate } from './components/SessionGate';
+import { AccessPanel } from './panels/AccessPanel';
 import { sampleManifest } from '../content/manifest';
-import { can, roles, type Role } from '../domain/access';
+import { can, type MembershipAuthority, type Role } from '../domain/access';
 import { AppPreview, type PreviewDevice } from '../preview/AppPreview';
 
 type Panel =
@@ -80,7 +83,7 @@ function ContentInspector() {
   );
 }
 
-function ReleaseInspector({ role }: { role: Role }) {
+function ReleaseInspector({ authority }: { authority: MembershipAuthority }) {
   const [status, setStatus] = useState('No release service is connected in foundation mode.');
   return (
     <div className="release-stack">
@@ -100,7 +103,7 @@ function ReleaseInspector({ role }: { role: Role }) {
       </div>
       <button
         className="button button--primary"
-        disabled={!can(role, 'staging:publish')}
+        disabled={!can(authority, 'staging:publish')}
         onClick={() => setStatus('Staging publish is intentionally disconnected.')}
         type="button"
       >
@@ -108,7 +111,7 @@ function ReleaseInspector({ role }: { role: Role }) {
       </button>
       <button
         className="button"
-        disabled={!can(role, 'production:promote')}
+        disabled={!can(authority, 'production:promote')}
         onClick={() => setStatus('Production promotion is intentionally disconnected.')}
         type="button"
       >
@@ -121,7 +124,13 @@ function ReleaseInspector({ role }: { role: Role }) {
   );
 }
 
-function Inspector({ panel, role }: { panel: Panel; role: Role }) {
+function Inspector({
+  panel,
+  authority,
+}: {
+  panel: Panel;
+  authority: MembershipAuthority & { role: Role };
+}) {
   return (
     <aside className="inspector" aria-labelledby="panel-title">
       <div className="inspector-heading">
@@ -131,8 +140,9 @@ function Inspector({ panel, role }: { panel: Panel; role: Role }) {
       </div>
       <p className="panel-description">{panelDescriptions[panel]}</p>
       {panel === 'Content' ? <ContentInspector /> : null}
-      {panel === 'Releases' ? <ReleaseInspector role={role} /> : null}
-      {panel !== 'Content' && panel !== 'Releases' ? (
+      {panel === 'Releases' ? <ReleaseInspector authority={authority} /> : null}
+      {panel === 'Access' ? <AccessPanel actorRole={authority.role} /> : null}
+      {panel !== 'Content' && panel !== 'Releases' && panel !== 'Access' ? (
         <div className="future-panel">
           <CirclesFour size={26} />
           <strong>Bounded for a later slice</strong>
@@ -143,10 +153,14 @@ function Inspector({ panel, role }: { panel: Panel; role: Role }) {
   );
 }
 
-export function App() {
+function Workspace({
+  session,
+}: {
+  session: SessionView & { membership: NonNullable<SessionView['membership']> };
+}) {
   const [panel, setPanel] = useState<Panel>('Content');
   const [device, setDevice] = useState<PreviewDevice>('phone');
-  const [role, setRole] = useState<Role>('editor');
+  const membership = session.membership;
 
   return (
     <div className="builder-app">
@@ -171,21 +185,20 @@ export function App() {
           <span className="muted">Revision {sampleManifest.revision}</span>
         </div>
         <div className="identity">
-          <label htmlFor="foundation-role">Foundation role</label>
-          <select
-            id="foundation-role"
-            value={role}
-            onChange={(event) => setRole(event.target.value as Role)}
-          >
-            {roles.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-          <span className="avatar" aria-hidden="true">
-            C
+          <span className="identity-copy">
+            <strong>@{membership.login}</strong>
+            <small>{membership.role}</small>
           </span>
+          <span className="avatar" aria-hidden="true">
+            {(membership.displayName ?? membership.login).slice(0, 1).toUpperCase()}
+          </span>
+          <button
+            className="button identity-signout"
+            type="button"
+            onClick={() => void signOut().then(() => window.location.reload())}
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
@@ -217,7 +230,7 @@ export function App() {
           ))}
           <div className="foundation-lock">
             <ShieldCheck size={18} />
-            <span>Data disconnected</span>
+            <span>Server-enforced access</span>
           </div>
         </nav>
 
@@ -253,8 +266,29 @@ export function App() {
           </div>
         </main>
 
-        <Inspector panel={panel} role={role} />
+        <Inspector panel={panel} authority={membership} />
       </div>
     </div>
+  );
+}
+
+export function App({ initialSession }: { initialSession?: SessionView } = {}) {
+  const [session, setSession] = useState<SessionView | null>(initialSession ?? null);
+
+  useEffect(() => {
+    if (initialSession) return;
+    const controller = new AbortController();
+    void loadSession(controller.signal)
+      .then(setSession)
+      .catch(() => setSession({ state: 'unavailable', membership: null, capabilities: [] }));
+    return () => controller.abort();
+  }, [initialSession]);
+
+  return (
+    <SessionGate session={session}>
+      {session?.state === 'active' && session.membership ? (
+        <Workspace session={{ ...session, membership: session.membership }} />
+      ) : null}
+    </SessionGate>
   );
 }

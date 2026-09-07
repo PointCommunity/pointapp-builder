@@ -32,18 +32,18 @@ Internal workflow state. Human-readable scope and decisions are in the adjacent 
 
 ## Phase 3 — US1 Bootstrap ownership and govern access (P1)
 
-- [ ] T023 [P] [US1] Write OAuth state, PKCE, cookie, callback, replay, and expiry tests in `tests/unit/server/auth.test.ts`
-- [ ] T024 [P] [US1] Write concurrent bootstrap and Pending Editor registration tests in `tests/integration/auth-bootstrap.test.ts`
-- [ ] T025 [P] [US1] Write exhaustive role/status/capability matrix tests in `tests/unit/domain/access-matrix.test.ts`
-- [ ] T026 [P] [US1] Write approval, demotion, disable, version-conflict, and last-Owner tests in `tests/integration/memberships.test.ts`
-- [ ] T027 [US1] Define roles, statuses, capabilities, management boundaries, and route policies in `src/domain/access.ts`
-- [ ] T028 [US1] Implement signed unique session/OAuth cookies, PKCE, GitHub identity exchange, and local fail-closed fixture adapter in `src/server/auth.ts`
-- [ ] T029 [US1] Implement atomic fixed-ID bootstrap and Pending Editor membership repository in `src/server/repositories/memberships.ts`
-- [ ] T030 [US1] Implement current-membership authorization middleware and capability checks in `src/server/authorize.ts`
-- [ ] T031 [US1] Implement membership lifecycle service with last-Owner protection and audit in `src/server/services/memberships.ts`
-- [ ] T032 [US1] Implement `/auth/*`, `/api/session`, and `/api/memberships*` routes in `src/server/routes/auth.ts` and `src/server/routes/memberships.ts`
-- [ ] T033 [US1] Replace role simulation with signed-out, pending, disabled, unavailable, and authenticated shells in `src/client/App.tsx` and `src/client/components/SessionGate.tsx`
-- [ ] T034 [US1] Add local and browser bootstrap/access journeys in `e2e/access.spec.ts`
+- [x] T023 [P] [US1] Write OAuth state, PKCE, cookie, callback, replay, and expiry tests in `tests/unit/server/auth.test.ts`
+- [x] T024 [P] [US1] Write concurrent bootstrap and Pending Editor registration tests in `tests/integration/auth-bootstrap.test.ts`
+- [x] T025 [P] [US1] Write exhaustive role/status/capability matrix tests in `tests/unit/domain/access-matrix.test.ts`
+- [x] T026 [P] [US1] Write approval, demotion, disable, version-conflict, and last-Owner tests in `tests/integration/memberships.test.ts`
+- [x] T027 [US1] Define roles, statuses, capabilities, management boundaries, and route policies in `src/domain/access.ts`
+- [x] T028 [US1] Implement signed unique session/OAuth cookies, PKCE, GitHub identity exchange, and local fail-closed fixture adapter in `src/server/auth.ts`
+- [x] T029 [US1] Implement atomic fixed-ID bootstrap and Pending Editor membership repository in `src/server/repositories/memberships.ts`
+- [x] T030 [US1] Implement current-membership authorization middleware and capability checks in `src/server/authorize.ts`
+- [x] T031 [US1] Implement membership lifecycle service with last-Owner protection and audit in `src/server/services/memberships.ts`
+- [x] T032 [US1] Implement `/auth/*`, `/api/session`, and `/api/memberships*` routes in `src/server/routes/auth.ts` and `src/server/routes/memberships.ts`
+- [x] T033 [US1] Replace role simulation with signed-out, pending, disabled, unavailable, and authenticated shells in `src/client/App.tsx` and `src/client/components/SessionGate.tsx`
+- [x] T034 [US1] Add local and browser bootstrap/access journeys in `e2e/access.spec.ts`
 
 ## Phase 4 — US2 Author and preserve app content (P1)
 

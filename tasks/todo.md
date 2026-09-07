@@ -13,8 +13,14 @@
   - Acceptance: planned panels are discoverable and release actions reflect capabilities.
   - Verify: accessibility and responsive browser checks.
 - [x] Task 5: Establish quality and delivery automation
-  - Acceptance: CI gates every push/PR; Pages is manual-only pending eligibility.
+  - Acceptance: CI gates every push/PR; hosting remains separate from quality automation.
   - Verify: local full suite and workflow inspection.
 - [x] Task 6: Create and verify the private GitHub repository
   - Acceptance: `PointCommunity/pointapp-builder` is private and exact `main` is pushed.
   - Verify: GitHub repository, commit, workflow, and Pages API readback.
+- [ ] Task 7: Establish Cloudflare Worker hosting
+  - Acceptance: isolated Worker, D1 binding, custom domain, account verification, and fail-closed API boundary exist.
+  - Verify: focused Worker tests, generated types, full quality suite, and configuration inspection.
+- [ ] Task 8: Release and verify `appbuilder.pointatx.org`
+  - Acceptance: exact clean `main` is live over HTTPS and health reports reachable D1 without enabling auth or publishing.
+  - Verify: GitHub Quality, Wrangler deployment readback, endpoint checks, and live browser inspection.

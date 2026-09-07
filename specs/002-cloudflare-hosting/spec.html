@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PointApp Builder Cloudflare Hosting Specification</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080c11;
+        --panel: #111923;
+        --line: #2b3a49;
+        --text: #eef5f7;
+        --muted: #9aacba;
+        --accent: #69d4c5;
+        --gold: #efbd6c;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at 80% 0, #16313a, #080c11 45%);
+        color: var(--text);
+        font:
+          16px/1.65 ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        width: min(1040px, calc(100% - 32px));
+        margin: auto;
+        padding: 56px 0 96px;
+      }
+      h1 {
+        font-size: clamp(2.4rem, 7vw, 4.8rem);
+        line-height: 1;
+        letter-spacing: -0.055em;
+      }
+      h2 {
+        margin-top: 2.3em;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.35em;
+      }
+      h3 {
+        color: var(--accent);
+      }
+      p,
+      li {
+        color: var(--muted);
+      }
+      code {
+        color: #fff;
+        background: #18242f;
+        padding: 0.15em 0.35em;
+        border-radius: 5px;
+      }
+      .card,
+      .callout {
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+      }
+      .callout {
+        border-left: 4px solid var(--gold);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 14px;
+      }
+      pre {
+        overflow: auto;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #070a0e;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p
+        style="
+          color: var(--accent);
+          font-weight: 800;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          font-size: 0.72rem;
+        "
+      >
+        Specification 002 · Hosting
+      </p>
+      <h1>Cloudflare hosting,<br />isolated by product.</h1>
+      <p>
+        PointApp Builder will use the same hosting shape as PointSite Builder while retaining its
+        own Worker, domain, data store, configuration, and future authentication credentials.
+      </p>
+
+      <aside class="callout">
+        <strong>Approved domain:</strong> <code>appbuilder.pointatx.org</code>. The initial
+        deployment may expose only the disconnected foundation interface and health endpoint.
+        Authentication, drafts, and publishing remain unavailable until separately implemented and
+        configured.
+      </aside>
+
+      <h2>Objective</h2>
+      <p>
+        Deploy the exact reviewed PointApp Builder source as a Cloudflare Worker that serves the
+        Vite application, routes API and authentication requests through Worker code, verifies
+        access to the Point Community Cloudflare account before deployment, and binds a dedicated D1
+        database.
+      </p>
+
+      <h2>Resources</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Worker</h3>
+          <p>
+            <code>pointapp-builder</code>, with observability enabled and public preview URLs
+            disabled.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Domain</h3>
+          <p><code>appbuilder.pointatx.org</code> as a Worker custom domain.</p>
+        </section>
+        <section class="card">
+          <h3>Database</h3>
+          <p>
+            A dedicated D1 database named <code>pointapp-builder</code>. It must never reuse
+            PointSite Builder data.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Assets</h3>
+          <p>
+            The Vite build is served by the Worker assets binding with single-page application
+            fallback.
+          </p>
+        </section>
+      </div>
+
+      <h2>Runtime behavior</h2>
+      <ul>
+        <li><code>GET /api/health</code> returns environment, app version, and D1 reachability.</li>
+        <li>
+          Unknown <code>/api/*</code> and <code>/auth/*</code> routes fail closed with a JSON
+          <code>503 FOUNDATION_LOCKED</code> response.
+        </li>
+        <li>All remaining requests resolve through the compiled static application.</li>
+        <li>
+          The deployed client continues to label itself as disconnected foundation mode; no
+          client-selected role is an authorization decision.
+        </li>
+      </ul>
+
+      <h2>Commands</h2>
+      <pre><code>npm run cloudflare:verify-account
+npm run types
+npm run check
+npm run test:e2e
+npm run deploy
+npx wrangler deployments list --name pointapp-builder
+curl -fsS https://appbuilder.pointatx.org/api/health</code></pre>
+
+      <h2>Project structure</h2>
+      <pre><code>worker/index.ts                         Worker entry point
+scripts/verify-cloudflare-account.ts   Account safety gate
+wrangler.jsonc                         Domain, asset, variable, and D1 bindings
+tests/unit/worker.test.ts               Fail-closed and health behavior
+.github/workflows/quality.yml          Build and verification checks</code></pre>
+
+      <h2>Code style</h2>
+      <pre><code>if (url.pathname === '/api/health') {
+  return healthResponse(await checkDatabase(env.DB));
+}
+return lockedResponse();</code></pre>
+      <p>
+        Keep routing explicit, responses deterministic, public metadata minimal, errors fail-closed,
+        and environment configuration validated before use.
+      </p>
+
+      <h2>Testing strategy</h2>
+      <ul>
+        <li>
+          Unit tests prove the health contract, D1 failure behavior, and locked unknown API/auth
+          routes.
+        </li>
+        <li>The existing full quality and browser suites must remain green.</li>
+        <li>
+          Before release, build from a clean exact commit and record the previous Worker deployment.
+        </li>
+        <li>
+          After release, verify Cloudflare deployment identity, TLS, health, HTML-derived assets,
+          responsive UI, and browser console state.
+        </li>
+      </ul>
+
+      <h2>Boundaries</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Always</h3>
+          <p>
+            Use the verified Point Community Cloudflare account, isolated resources, exact committed
+            source, and post-deploy live evidence.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Ask first</h3>
+          <p>
+            Add authentication credentials, enable draft mutations, connect PointApp delivery, or
+            enable Production publishing.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Never</h3>
+          <p>
+            Reuse PointSite D1 data or auth secrets, expose credentials, deploy a dirty tree, or
+            represent foundation controls as real authorization.
+          </p>
+        </section>
+      </div>
+
+      <h2>Success criteria</h2>
+      <ul>
+        <li>
+          The dedicated D1 resource and Worker deployment exist in the expected Cloudflare account.
+        </li>
+        <li>
+          <code>https://appbuilder.pointatx.org</code> serves the PointApp Builder foundation over
+          HTTPS.
+        </li>
+        <li>The live health endpoint reports the deployed version and reachable database.</li>
+        <li>Unknown API and authentication routes fail closed.</li>
+        <li>Local and GitHub quality gates pass on the exact deployed commit.</li>
+        <li>
+          The obsolete GitHub Pages workflow is removed and human-facing hosting documentation
+          describes Cloudflare.
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>

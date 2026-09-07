@@ -178,6 +178,11 @@
           manifest for rollback.
         </li>
         <li>
+          Production promotion atomically advances the Production channel to the exact verified
+          Staging envelope and emits a device refresh hint. Online apps activate it immediately
+          after verification; apps that are offline activate it on their next successful refresh.
+        </li>
+        <li>
           Native capabilities and executable changes continue through Apple App Store and Google
           Play releases.
         </li>
@@ -200,10 +205,12 @@
             <td class="yes">Yes</td>
             <td class="yes">Yes</td>
             <td class="yes">Yes</td>
+            <td class="yes">Yes</td>
           </tr>
           <tr>
             <td>Publish exact revision to Staging</td>
             <td class="no">No</td>
+            <td class="yes">Yes</td>
             <td class="yes">Yes</td>
             <td class="yes">Yes</td>
           </tr>
@@ -232,7 +239,8 @@
       </table>
       <p>
         Authorization must be enforced by the future API. Hidden or disabled browser controls are
-        guidance only, never the security boundary.
+        guidance only, never the security boundary. The API must preserve the PointSite Builder role
+        progression: Editor &lt; Publisher &lt; Administrator &lt; Owner.
       </p>
 
       <h2>4. Initial content model</h2>
@@ -248,17 +256,18 @@
       <ul>
         <li>React, strict TypeScript, Vite, Zod, Vitest, Testing Library, and Playwright.</li>
         <li>
-          GitHub Pages serves only the static Builder client. No secret, role assignment, draft, or
-          release credential may be bundled into it.
+          A dedicated Cloudflare Worker serves the static Builder client at
+          <code>appbuilder.pointatx.org</code>. No secret, role assignment, draft, or release
+          credential may be bundled into browser assets.
         </li>
         <li>
-          A separate authenticated API and durable store will be selected before collaborative
-          editing begins.
+          The Worker binds an isolated D1 database for runtime health only. Authenticated
+          persistence and collaborative editing remain disabled until their contracts and controls
+          are approved.
         </li>
         <li>
-          The current PointCommunity GitHub Free plan cannot publish Pages from this private
-          organization repository. The Pages workflow remains manually gated until the plan or host
-          decision changes.
+          Unimplemented API and authentication routes fail closed. Deployments verify the expected
+          Cloudflare identity and must use an exact clean commit.
         </li>
       </ul>
 
@@ -282,7 +291,9 @@ tests/unit/                 Domain and schema tests
 tests/e2e/                  Browser and responsive checks
 docs/                       Dark-mode human-facing architecture
 tasks/                      Internal implementation plan and task state
-.github/workflows/          Quality and manually gated Pages delivery</code></pre>
+.github/workflows/          Quality automation
+worker/                     Cloudflare Worker runtime boundary
+wrangler.jsonc              Worker, domain, assets, and D1 configuration</code></pre>
 
       <h2>8. Code style</h2>
       <pre><code>export function can(actor: Actor, capability: Capability): boolean {
@@ -329,9 +340,9 @@ tasks/                      Internal implementation plan and task state
         <section class="card">
           <h3>Never</h3>
           <p>
-            Place secrets in Pages, treat client-side roles as security, directly mutate PointApp
-            source, ship executable code in content manifests, silently overwrite a newer revision,
-            or bypass app-store release controls.
+            Place secrets in browser assets, treat client-side roles as security, directly mutate
+            PointApp source, ship executable code in content manifests, silently overwrite a newer
+            revision, or bypass app-store release controls.
           </p>
         </section>
       </div>
@@ -352,15 +363,16 @@ tasks/                      Internal implementation plan and task state
         </li>
         <li>Quality, build, and browser checks pass locally and in GitHub Actions.</li>
         <li>
-          Pages deployment is configured but cannot activate from a private repository until the
-          organization plan supports it.
+          A dedicated Cloudflare Worker and D1 binding serve the disconnected foundation at
+          <code>appbuilder.pointatx.org</code>; unfinished API and authentication routes fail
+          closed.
         </li>
       </ul>
 
       <h2>12. Deferred decisions</h2>
       <ul>
         <li>Identity provider and account recovery.</li>
-        <li>Authenticated API/store host and operating-cost ceiling.</li>
+        <li>Authenticated persistence model, identity provider, and operating-cost ceiling.</li>
         <li>Production approval details beyond the initial Administrator/Owner gate.</li>
         <li>
           Native PointApp framework, offline media policy, push provider, analytics, and app-store

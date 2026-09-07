@@ -2,7 +2,7 @@
 
 ## Dependency graph
 
-Research and product boundary -> content and access contracts -> responsive preview -> Builder shell -> quality gates -> private repository -> Pages readiness.
+Research and product boundary -> content and access contracts -> responsive preview -> Builder shell -> quality gates -> private repository -> isolated Cloudflare hosting.
 
 ## Phase 1: specification and contracts
 
@@ -18,17 +18,27 @@ Research and product boundary -> content and access contracts -> responsive prev
 ## Phase 3: repository and delivery
 
 - [x] Add format, lint, type, unit, build, browser, and security-oriented CI gates.
-- [x] Add a manual-only GitHub Pages workflow pending private Pages eligibility.
+- [x] Record the initial GitHub Pages eligibility constraint before the Cloudflare host was selected.
 - [x] Create and push the private PointCommunity repository.
 - [x] Read back repository visibility, default branch, commit, Actions, and Pages state.
 
 ## Risks
 
-- GitHub Free does not support Pages from a private organization repository; do not make the repository public as a workaround.
-- A static Pages bundle cannot enforce authorization; all sensitive actions remain disconnected until a protected API exists.
+- A public client bundle cannot enforce authorization; all sensitive actions remain disconnected until the Worker API has authenticated, server-side policy.
 - Content updates must remain data-only to comply with native-store executable-code policies.
 - Staging fidelity depends on the future PointApp consuming the same versioned contract.
 
-## Checkpoint
+## Foundation checkpoint
 
-All local quality gates pass, the exact pushed commit is known, the repository is private, no PointApp repository interaction occurred, and deployment limitations are reported without overstating live status.
+All foundation quality gates passed, the exact pushed commit was known, the repository remained private, and no PointApp repository interaction occurred.
+
+## Phase 4: Cloudflare hosting parity
+
+- [x] Verify the live PointSite Builder hosting pattern and Point Community Cloudflare identity.
+- [x] Confirm the dedicated domain `appbuilder.pointatx.org`.
+- [x] Create the isolated `pointapp-builder` D1 database.
+- [x] Add the Worker health and fail-closed API boundary test-first.
+- [x] Replace GitHub Pages configuration and documentation with Cloudflare Worker deployment.
+- [x] Run local quality and browser verification.
+- [ ] Commit and push the exact deployment candidate; wait for GitHub Quality.
+- [ ] Deploy the exact clean candidate and verify Cloudflare, TLS, health, assets, responsive UI, and console state.

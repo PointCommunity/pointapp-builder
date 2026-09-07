@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pointapp-builder",
+  "account_id": "bc890091d86ddf9ce669e96e79d47746",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "appbuilder.pointatx.org",
+      "custom_domain": true,
+    },
+  ],
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/auth/*"],
+  },
+  "vars": {
+    "ENVIRONMENT": "production",
+    "APP_VERSION": "0.1.0",
+    "BUILDER_ORIGIN": "https://appbuilder.pointatx.org",
+    "AUTHENTICATION_ENABLED": "false",
+    "PUBLISHING_ENABLED": "false",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pointapp-builder",
+      "database_id": "9514b157-7e95-401e-9a93-0a5ee120c7fe",
+    },
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
+}

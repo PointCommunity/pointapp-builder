@@ -21,4 +21,4 @@
 - Before any completion claim, run formatting, types, lint, unit/coverage, build, and relevant browser tests.
 - Human-facing documents and diagrams must be dark-mode HTML. Markdown under `tasks/` is internal workflow state.
 - Preserve unknown user-owned work. Never reset, clean, stash, overwrite, commit, or deploy it without direction.
-- GitHub Pages is manual-only while the repository is private and the organization remains on a plan without private-repository Pages support.
+- Cloudflare Worker deployments must use the verified Point Community account and an exact clean commit. Authentication, mutations, PointApp delivery, and Production publishing remain disabled until separately implemented and authorized.

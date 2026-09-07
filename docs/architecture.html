@@ -174,10 +174,10 @@
       <h2>Separated responsibilities</h2>
       <div class="cards">
         <section class="card">
-          <h3>GitHub Pages client</h3>
+          <h3>Cloudflare Worker client</h3>
           <p>
-            Loads the authenticated workspace from an API, renders controls and previews, and holds
-            no privileged credentials.
+            Serves the compiled Builder shell, routes protected paths through Worker code, and holds
+            no privileged credentials in browser assets.
           </p>
         </section>
         <section class="card">
@@ -191,17 +191,28 @@
           <h3>Content delivery</h3>
           <p>
             Serves immutable Staging and Production envelopes over HTTPS with cache controls and
-            rollback-safe identifiers.
+            rollback-safe identifiers. Promotion atomically advances the Production pointer and
+            emits a refresh hint without rebuilding the approved envelope.
           </p>
         </section>
         <section class="card">
           <h3>Installed PointApp</h3>
           <p>
             Ships native renderers and capabilities through stores, then accepts only compatible
-            data manifests from the release channel.
+            data manifests from the release channel. Online devices verify and activate a promoted
+            manifest immediately; offline devices do so at their next successful refresh.
           </p>
         </section>
       </div>
+
+      <h2>PointSite-aligned access</h2>
+      <p>
+        The Builder preserves the same ordered roles: Editor, Publisher, Administrator, and Owner.
+        Editors author drafts, Publishers may publish an exact revision to Staging, and only
+        Administrators or Owners may promote that unchanged verified revision to Production. Every
+        mutation and promotion is enforced and audited by the future API, never trusted to browser
+        controls.
+      </p>
 
       <h2>Why data-only updates</h2>
       <p>
@@ -211,29 +222,26 @@
         reviewed native binary. New native capabilities require normal store releases.
       </p>
 
-      <h2>Hosting constraint</h2>
+      <h2>Hosting boundary</h2>
       <section class="card warning">
         <p>
-          GitHub documents private Pages access for Enterprise Cloud and private-repository Pages
-          availability on paid plans. The current PointCommunity organization reports the Free plan.
-          The repository stays private, so the Pages deployment remains gated until the organization
-          plan changes or another host is explicitly approved.
+          <code>appbuilder.pointatx.org</code> is hosted by a dedicated Cloudflare Worker with an
+          isolated D1 binding. The current public shell is deliberately disconnected: unknown API
+          and authentication routes fail closed, and no browser-selected role grants authority.
+          Authentication, persistence, signing, and release delivery require separate
+          implementation.
         </p>
       </section>
 
       <h2>Primary references</h2>
       <ul>
         <li>
-          <a
-            href="https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages"
-            >GitHub Pages custom workflows</a
+          <a href="https://developers.cloudflare.com/workers/static-assets/"
+            >Cloudflare Workers static assets</a
           >
         </li>
         <li>
-          <a
-            href="https://docs.github.com/en/enterprise-cloud@latest/pages/getting-started-with-github-pages/changing-the-visibility-of-your-github-pages-site"
-            >GitHub Pages access control</a
-          >
+          <a href="https://developers.cloudflare.com/d1/">Cloudflare D1</a>
         </li>
         <li>
           <a href="https://developer.apple.com/app-store/review/guidelines/"

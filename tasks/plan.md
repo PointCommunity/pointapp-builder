@@ -40,5 +40,9 @@ All foundation quality gates passed, the exact pushed commit was known, the repo
 - [x] Add the Worker health and fail-closed API boundary test-first.
 - [x] Replace GitHub Pages configuration and documentation with Cloudflare Worker deployment.
 - [x] Run local quality and browser verification.
-- [ ] Commit and push the exact deployment candidate; wait for GitHub Quality.
-- [ ] Deploy the exact clean candidate and verify Cloudflare, TLS, health, assets, responsive UI, and console state.
+- [x] Commit and push the exact deployment candidate; wait for GitHub Quality.
+- [x] Deploy the exact clean candidate and verify Cloudflare, TLS, health, assets, responsive UI, and console state.
+
+## Hosting checkpoint
+
+The dedicated Worker and D1 binding are live at `appbuilder.pointatx.org`. HTTPS redirection, runtime health, fail-closed routes, compiled assets, phone/tablet layouts, and a clean browser console were verified without enabling authentication or publishing.

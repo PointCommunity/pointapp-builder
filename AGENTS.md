@@ -22,3 +22,12 @@
 - Human-facing documents and diagrams must be dark-mode HTML. Markdown under `tasks/` is internal workflow state.
 - Preserve unknown user-owned work. Never reset, clean, stash, overwrite, commit, or deploy it without direction.
 - Cloudflare Worker deployments must use the verified Point Community account and an exact clean commit. Authentication, mutations, PointApp delivery, and Production publishing remain disabled until separately implemented and authorized.
+
+## Active Technologies
+
+- TypeScript 5.9 on Node.js 22 and Cloudflare Workers 2026 runtime + React 19, Vite 8, Hono, Zod 4, Cloudflare Workers Static Assets (003-complete-builder)
+- Cloudflare D1 with immutable revisions and chunked image payloads (003-complete-builder)
+
+## Recent Changes
+
+- 003-complete-builder: Added TypeScript 5.9 on Node.js 22 and Cloudflare Workers 2026 runtime + React 19, Vite 8, Hono, Zod 4, Cloudflare Workers Static Assets

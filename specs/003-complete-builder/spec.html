@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PointApp Builder Complete Product Specification</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080c11;
+        --panel: #111923;
+        --line: #2a3948;
+        --text: #eff6f8;
+        --muted: #a4b2bd;
+        --accent: #69d4c5;
+        --gold: #efbd6c;
+        --danger: #ff8c91;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at 80% 0, #153139, #080c11 42%);
+        color: var(--text);
+        font:
+          16px/1.65 ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: auto;
+        padding: 56px 0 100px;
+      }
+      h1 {
+        font-size: clamp(2.5rem, 7vw, 5.2rem);
+        line-height: 0.95;
+        letter-spacing: -0.055em;
+        max-width: 900px;
+      }
+      h2 {
+        margin-top: 2.5em;
+        padding-bottom: 0.4em;
+        border-bottom: 1px solid var(--line);
+      }
+      h3 {
+        color: var(--accent);
+      }
+      p,
+      li,
+      td {
+        color: var(--muted);
+      }
+      strong,
+      th {
+        color: var(--text);
+      }
+      code {
+        color: #fff;
+        background: #18242f;
+        padding: 0.15em 0.35em;
+        border-radius: 5px;
+      }
+      .eyebrow {
+        color: var(--accent);
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+      }
+      .callout,
+      .card {
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+      }
+      .callout {
+        border-left: 4px solid var(--gold);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 14px;
+      }
+      .priority {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #183d3a;
+        color: var(--accent);
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+        border: 1px solid var(--line);
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--line);
+      }
+      th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      a {
+        color: var(--accent);
+      }
+      .danger {
+        color: var(--danger);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Specification 003 · Complete production product</p>
+      <h1>A real control plane for the PointApp.</h1>
+      <p>
+        PointApp Builder is the private, role-governed authoring and release system for the public
+        content rendered by installed PointApp phone and tablet clients. This specification replaces
+        the disconnected foundation behavior with working authentication, persistence, editing,
+        Staging, Production, audit, and delivery capabilities.
+      </p>
+
+      <aside class="callout">
+        <strong>Two meanings of Production:</strong> PointApp Builder has one deployment
+        environment, Production at <code>appbuilder.pointatx.org</code>. Inside that Builder,
+        PointApp content moves from Draft to the PointApp Staging channel and then to the PointApp
+        Production channel. The channels are content states, not deployments of the Builder
+        application.
+      </aside>
+
+      <h2>1. Prioritized user journeys</h2>
+      <div class="grid">
+        <section class="card">
+          <span class="priority">P1</span>
+          <h3>Bootstrap ownership and govern access</h3>
+          <p>
+            The designated bootstrap GitHub identity signs in for the first time and becomes the
+            initial Owner. Every later first-time user is recorded as a pending Editor. Owners
+            review, approve, disable, and assign roles; Administrators may manage only Editors and
+            Publishers.
+          </p>
+          <p>
+            <strong>Independent test:</strong> start with an empty database, complete three identity
+            logins, and prove bootstrap, pending, approval, role bounds, last-Owner protection, and
+            audit records.
+          </p>
+        </section>
+        <section class="card">
+          <span class="priority">P1</span>
+          <h3>Author and preserve app content</h3>
+          <p>
+            An Editor creates a draft, manages screens and elements, configures navigation and brand
+            settings, sees the same manifest in phone and tablet previews, and saves immutable
+            revisions without losing concurrent work.
+          </p>
+          <p>
+            <strong>Independent test:</strong> create, edit, save, reload, duplicate, archive, and
+            recover a draft while proving optimistic-conflict behavior.
+          </p>
+        </section>
+        <section class="card">
+          <span class="priority">P1</span>
+          <h3>Release exact content to devices</h3>
+          <p>
+            A Publisher publishes an exact revision to PointApp Staging. An Administrator or Owner
+            promotes that unchanged verified envelope to PointApp Production. Installed apps can
+            fetch, verify, cache, and atomically activate the new manifest without an app-store
+            release.
+          </p>
+          <p>
+            <strong>Independent test:</strong> publish and promote, then compare revision, digest,
+            envelope, ETag, signature, history, and rollback behavior byte-for-byte.
+          </p>
+        </section>
+        <section class="card">
+          <span class="priority">P2</span>
+          <h3>Operate every Builder panel</h3>
+          <p>
+            Content, Library, Navigation, Branding, Audience, Notifications, Releases, Access, and
+            Settings each expose useful persisted behavior appropriate to the actor’s role.
+          </p>
+          <p>
+            <strong>Independent test:</strong> complete the primary flow in each panel and reload
+            the workspace to prove persistence.
+          </p>
+        </section>
+        <section class="card">
+          <span class="priority">P2</span>
+          <h3>Audit and recover safely</h3>
+          <p>
+            Owners can inspect access, content, release, and rollback activity. Production retains a
+            last-known-good envelope and may roll back only to an existing signed Production
+            release.
+          </p>
+          <p>
+            <strong>Independent test:</strong> create several releases, roll back to one, and prove
+            the channel pointer and audit history while preserving every immutable release.
+          </p>
+        </section>
+        <section class="card">
+          <span class="priority">P3</span>
+          <h3>Work comfortably on common screens</h3>
+          <p>
+            The authenticated Builder remains keyboard-accessible and usable on mobile, tablet, and
+            desktop screens, while its preview explicitly models installed phone and tablet layouts.
+          </p>
+          <p>
+            <strong>Independent test:</strong> run the full author/publish/admin paths at
+            representative viewport sizes with no inaccessible controls or horizontal page clipping.
+          </p>
+        </section>
+      </div>
+
+      <h2>2. Acceptance scenarios</h2>
+      <ol>
+        <li>
+          <strong>Given</strong> no memberships exist, <strong>when</strong> GitHub user ID
+          <code>1202831</code> signs in, <strong>then</strong> one active Owner membership is
+          created and audited.
+        </li>
+        <li>
+          <strong>Given</strong> an Owner already exists, <strong>when</strong> any new valid GitHub
+          identity signs in, <strong>then</strong> a pending Editor request is created and protected
+          content remains unavailable.
+        </li>
+        <li>
+          <strong>Given</strong> a pending user, <strong>when</strong> an Owner approves the
+          request, <strong>then</strong> that user can enter as an Editor on the next authenticated
+          request.
+        </li>
+        <li>
+          <strong>Given</strong> an Editor’s current revision, <strong>when</strong> the Editor
+          changes an element and saves, <strong>then</strong> a new immutable revision is stored and
+          the prior revision remains retrievable.
+        </li>
+        <li>
+          <strong>Given</strong> two editors started from the same revision,
+          <strong>when</strong> one has already saved, <strong>then</strong> the other receives a
+          conflict and no work is silently overwritten.
+        </li>
+        <li>
+          <strong>Given</strong> a valid draft revision, <strong>when</strong> a Publisher publishes
+          to Staging, <strong>then</strong> a signed immutable Staging envelope is stored and
+          rendered in the Staging preview.
+        </li>
+        <li>
+          <strong>Given</strong> an exact Staging envelope, <strong>when</strong> an Administrator
+          or Owner promotes it, <strong>then</strong> Production points to the identical manifest
+          digest without rebuilding it.
+        </li>
+        <li>
+          <strong>Given</strong> a device requests Production with the current ETag,
+          <strong>when</strong> no release changed, <strong>then</strong> it receives
+          <code>304</code>; after promotion it receives the new signed envelope immediately.
+        </li>
+        <li>
+          <strong>Given</strong> a prior Production release, <strong>when</strong> an Owner rolls
+          back, <strong>then</strong> the channel advances to that already-signed release and
+          records the rollback actor and reason.
+        </li>
+        <li>
+          <strong>Given</strong> an unauthorized or pending actor, <strong>when</strong> any
+          protected mutation is attempted, <strong>then</strong> the API denies it even if a request
+          is constructed outside the UI.
+        </li>
+      </ol>
+
+      <h2>3. Functional requirements</h2>
+      <h3>Authentication and access</h3>
+      <ul>
+        <li>
+          <strong>FR-001:</strong> Authenticate users through the existing organization-owned
+          <code>pointsite-builder</code> GitHub App using exact callback URLs, state, PKCE,
+          short-lived authorization codes, and signed Secure HttpOnly sessions.
+        </li>
+        <li>
+          <strong>FR-002:</strong> Configure that existing GitHub App installation for all
+          <code>PointCommunity</code> repositories without expanding its current repository
+          permissions.
+        </li>
+        <li>
+          <strong>FR-003:</strong> Permit only fixed GitHub user ID <code>1202831</code> to
+          bootstrap an empty installation as the first Owner.
+        </li>
+        <li>
+          <strong>FR-004:</strong> Register every other first-time authenticated identity as role
+          Editor with status Pending; never grant content access before approval.
+        </li>
+        <li>
+          <strong>FR-005:</strong> Preserve the ordered roles Editor, Publisher, Administrator, and
+          Owner and enforce every capability server-side.
+        </li>
+        <li>
+          <strong>FR-006:</strong> Allow Owners to approve, disable, reactivate, and assign any
+          role; allow Administrators to manage only Editors and Publishers.
+        </li>
+        <li>
+          <strong>FR-007:</strong> Prevent disabling or demoting the last active Owner and prevent
+          self-lockout when it would leave no Owner.
+        </li>
+        <li>
+          <strong>FR-008:</strong> Re-read membership status and role on every protected request so
+          revocation takes effect immediately.
+        </li>
+        <li>
+          <strong>FR-009:</strong> Remove the simulated role selector and show the authenticated
+          identity, actual role/status, and sign-out action.
+        </li>
+        <li>
+          <strong>FR-010:</strong> Present distinct signed-out, pending, disabled, unavailable, and
+          authenticated states without leaking protected data.
+        </li>
+      </ul>
+
+      <h3>Content, media, and configuration</h3>
+      <ul>
+        <li>
+          <strong>FR-011:</strong> Support multiple named drafts with create, duplicate, archive,
+          recover, and non-destructive history behavior.
+        </li>
+        <li>
+          <strong>FR-012:</strong> Store each save as a new immutable revision with parent,
+          sequence, checksum, actor, label, schema version, and timestamp.
+        </li>
+        <li>
+          <strong>FR-013:</strong> Reject a save whose expected parent is stale and return enough
+          safe information to reload without overwriting newer work.
+        </li>
+        <li>
+          <strong>FR-014:</strong> Let Editors create, rename, duplicate, reorder, hide, and delete
+          screens while preserving valid navigation targets.
+        </li>
+        <li>
+          <strong>FR-015:</strong> Let Editors add, edit, duplicate, move, reorder, and remove
+          supported elements: Hero, Rich Text, Action, Image, Video, Audio, Card List, Event List,
+          Scripture, Divider, Spacer, and Embed Link.
+        </li>
+        <li>
+          <strong>FR-016:</strong> Validate all text, links, identifiers, counts, media references,
+          dates, audience rules, and presentation values against bounded allowlists.
+        </li>
+        <li>
+          <strong>FR-017:</strong> Let Editors upload JPEG, PNG, WebP, and AVIF images and bounded
+          audio/video metadata; reject unsupported type, size, dimensions, checksum, or missing
+          accessibility metadata.
+        </li>
+        <li>
+          <strong>FR-018:</strong> Serve private draft media only to active members and public media
+          only when referenced by the active Production release.
+        </li>
+        <li>
+          <strong>FR-019:</strong> Let Editors configure two-to-five bottom navigation items
+          targeting existing visible screens with supported icons.
+        </li>
+        <li>
+          <strong>FR-020:</strong> Let Editors configure app identity, approved color tokens, logo
+          media, typography scale, corner style, and light/dark presentation tokens.
+        </li>
+        <li>
+          <strong>FR-021:</strong> Let Editors define audience segments and apply explicit segment
+          visibility to screens and elements without storing member personal data.
+        </li>
+        <li>
+          <strong>FR-022:</strong> Let Editors create notification campaigns with title, body,
+          destination, audience, status, and optional scheduled time; campaigns are delivered as
+          signed PointApp content, not sent through an unconfigured native push provider.
+        </li>
+        <li>
+          <strong>FR-023:</strong> Let authorized users configure organization identity, support
+          links, default locale/time zone, refresh guidance, and minimum compatible manifest schema.
+        </li>
+        <li>
+          <strong>FR-024:</strong> Render the same manifest semantics in switchable phone and tablet
+          previews, including screen navigation and audience selection.
+        </li>
+        <li>
+          <strong>FR-025:</strong> Persist useful changes from every Builder panel; no panel may
+          remain a placeholder or simulated success path.
+        </li>
+      </ul>
+
+      <h3>Staging, Production, and installed-app delivery</h3>
+      <ul>
+        <li>
+          <strong>FR-026:</strong> Allow Publishers, Administrators, and Owners to publish one exact
+          saved revision to the PointApp Staging channel.
+        </li>
+        <li>
+          <strong>FR-027:</strong> Validate schema, navigation, media readiness, accessibility
+          fields, link policy, compatibility, and notification timing before Staging publication.
+        </li>
+        <li>
+          <strong>FR-028:</strong> Create a canonical immutable release envelope containing manifest
+          revision, digest, release time, channel, signing algorithm, signature, and key identifier.
+        </li>
+        <li>
+          <strong>FR-029:</strong> Allow only Administrators and Owners to promote the current
+          verified Staging release to Production.
+        </li>
+        <li>
+          <strong>FR-030:</strong> Promote without rebuilding or altering the Staging manifest
+          payload; the manifest digest must remain identical.
+        </li>
+        <li>
+          <strong>FR-031:</strong> Expose a public, read-only, versioned Production channel endpoint
+          supporting HTTPS, ETag conditional requests, explicit cache behavior, and safe
+          compatibility metadata.
+        </li>
+        <li>
+          <strong>FR-032:</strong> Expose the signing public key and retain the private signing key
+          only as a Worker secret.
+        </li>
+        <li>
+          <strong>FR-033:</strong> Preserve immutable release history and a last-known-good
+          Production pointer.
+        </li>
+        <li>
+          <strong>FR-034:</strong> Allow Owners to roll back only to a previously signed Production
+          release and require a bounded reason.
+        </li>
+        <li>
+          <strong>FR-035:</strong> Return a changed ETag immediately after Production promotion or
+          rollback so online apps can fetch and atomically activate the new content; offline
+          delivery occurs at the next refresh.
+        </li>
+      </ul>
+
+      <h3>Security, operations, and Builder delivery</h3>
+      <ul>
+        <li>
+          <strong>FR-036:</strong> Require exact same-origin mutation requests, allowed content
+          types, bounded bodies, idempotency keys for retryable mutations, and per-actor/IP rate
+          limits.
+        </li>
+        <li>
+          <strong>FR-037:</strong> Apply restrictive security headers and never expose credentials,
+          stack traces, raw database errors, private records, or signing material.
+        </li>
+        <li>
+          <strong>FR-038:</strong> Record successful, denied, and failed access, draft, media,
+          release, rollback, and settings mutations with request correlation IDs.
+        </li>
+        <li>
+          <strong>FR-039:</strong> Provide Owner-visible audit history, release history, resource
+          capacity, and system health without exposing secret values.
+        </li>
+        <li>
+          <strong>FR-040:</strong> Use backward-compatible, locally rehearsed D1 migrations and
+          refuse application startup when configuration is incomplete outside local development.
+        </li>
+        <li>
+          <strong>FR-041:</strong> Provide deterministic local identity fixtures that cannot
+          activate on non-loopback or Production requests.
+        </li>
+        <li>
+          <strong>FR-042:</strong> Keep the private source repository and the public Worker shell
+          separated; unauthenticated requests may access only login, health, public Production
+          content, its referenced public media, and static assets.
+        </li>
+        <li>
+          <strong>FR-043:</strong> Meet the WCAG 2.2 AA target for semantics, labels, focus,
+          contrast, keyboard operation, status announcements, reduced motion, and 44-pixel touch
+          targets.
+        </li>
+        <li>
+          <strong>FR-044:</strong> Keep primary API reads below 250 ms p95 and authenticated saves
+          below 500 ms p95 in the repository load profile, excluding GitHub OAuth latency.
+        </li>
+        <li>
+          <strong>FR-045:</strong> Run formatting, generated-type, type, lint, contract, migration,
+          unit/integration coverage, build, dependency audit, performance, responsive browser,
+          accessibility, and live verification gates.
+        </li>
+        <li>
+          <strong>FR-046:</strong> Develop, build, and deploy PointApp Builder directly to its
+          single Production environment only after the exact commit passes all gates; never create a
+          Builder canary/staging environment.
+        </li>
+      </ul>
+
+      <h2>4. Key entities</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Entity</th>
+            <th>Purpose and invariant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GitHub identity</td>
+            <td>
+              Stable GitHub numeric ID and normalized login; identity is not authority by itself.
+            </td>
+          </tr>
+          <tr>
+            <td>Membership</td>
+            <td>
+              Role plus Pending, Active, or Disabled status; every protected request consults
+              current state.
+            </td>
+          </tr>
+          <tr>
+            <td>Draft</td>
+            <td>Named mutable workspace whose saves point to immutable revisions.</td>
+          </tr>
+          <tr>
+            <td>Revision</td>
+            <td>
+              Canonical PointApp manifest snapshot with parent, sequence, checksum, schema, actor,
+              and time.
+            </td>
+          </tr>
+          <tr>
+            <td>Manifest</td>
+            <td>
+              Data-only app identity, settings, theme, audiences, navigation, screens, elements,
+              media references, and notification campaigns.
+            </td>
+          </tr>
+          <tr>
+            <td>Media asset</td>
+            <td>
+              Validated private object and metadata; becomes public only through active Production
+              reference.
+            </td>
+          </tr>
+          <tr>
+            <td>Release envelope</td>
+            <td>
+              Immutable signed revision for Staging or Production with digest and compatibility
+              metadata.
+            </td>
+          </tr>
+          <tr>
+            <td>Channel pointer</td>
+            <td>Atomic Staging or Production reference to one immutable release.</td>
+          </tr>
+          <tr>
+            <td>Audit event</td>
+            <td>
+              Append-only actor, action, target, outcome, request ID, time, and bounded safe
+              metadata.
+            </td>
+          </tr>
+          <tr>
+            <td>Idempotency record</td>
+            <td>Actor-scoped replay protection for retryable mutations.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>5. Edge cases and required outcomes</h2>
+      <ul>
+        <li>
+          An arbitrary user reaches the empty installation before the designated Owner: they become
+          Pending, never Owner.
+        </li>
+        <li>
+          The bootstrap identity signs in after pending requests exist but no Owner exists: the
+          bootstrap identity becomes Owner atomically.
+        </li>
+        <li>
+          Two bootstrap requests race: database uniqueness yields exactly one active Owner record.
+        </li>
+        <li>
+          A login changes capitalization or username: stable GitHub ID retains membership and
+          updates the display login.
+        </li>
+        <li>An Owner attempts to remove the last Owner: reject without state change.</li>
+        <li>A user is disabled mid-session: the next protected request is denied.</li>
+        <li>
+          A screen targeted by navigation is hidden/deleted: reject or repair only through an
+          explicit user choice.
+        </li>
+        <li>
+          An element references unavailable media: reject Staging publication and identify the
+          element safely.
+        </li>
+        <li>
+          A scheduled notification time is in the past: require explicit immediate-send confirmation
+          represented as an immediate campaign state.
+        </li>
+        <li>
+          A Production promotion retries after a network failure: the same idempotency key returns
+          the original result.
+        </li>
+        <li>
+          Signing configuration is missing: editing remains available, but all releases fail closed
+          with an operator-safe message.
+        </li>
+        <li>
+          A public client sends a malformed ETag or unsupported schema: return a safe bounded
+          response without exposing draft state.
+        </li>
+      </ul>
+
+      <h2>6. Measurable success criteria</h2>
+      <ul>
+        <li>
+          <strong>SC-001:</strong> In an empty local installation, the designated identity reaches
+          an active Owner workspace in one login; three later identities are all pending Editors
+          with zero protected-data responses.
+        </li>
+        <li>
+          <strong>SC-002:</strong> Every one of the nine named panels completes at least one
+          persisted end-to-end user flow and reloads the saved result.
+        </li>
+        <li>
+          <strong>SC-003:</strong> A complete create-edit-save-Staging-Production journey succeeds
+          without manual database or repository intervention.
+        </li>
+        <li>
+          <strong>SC-004:</strong> Staging and promoted Production manifest digests are identical in
+          100% of release tests.
+        </li>
+        <li>
+          <strong>SC-005:</strong> Unauthorized role/capability combinations are denied in 100% of
+          the executable access matrix.
+        </li>
+        <li>
+          <strong>SC-006:</strong> All automated tests pass with no unexplained skips and every
+          configured coverage threshold passes.
+        </li>
+        <li>
+          <strong>SC-007:</strong> Phone, tablet portrait, tablet landscape, and desktop tests show
+          no page-level horizontal clipping, keyboard traps, or automatically detectable
+          accessibility violations.
+        </li>
+        <li>
+          <strong>SC-008:</strong> Primary read requests meet 250 ms p95 and saves meet 500 ms p95
+          under the repository’s repeatable load profile.
+        </li>
+        <li>
+          <strong>SC-009:</strong> The exact reviewed <code>main</code> commit passes GitHub
+          Quality, deploys to <code>appbuilder.pointatx.org</code>, and passes live HTTPS, health,
+          content-channel, asset, and browser checks.
+        </li>
+        <li>
+          <strong>SC-010:</strong> The final handoff states all remaining external/native
+          dependencies plainly and invites the Owner to begin human testing only after every
+          automated and agent-operated gate is green.
+        </li>
+      </ul>
+
+      <h2>7. Explicit boundaries</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Included</h3>
+          <p>
+            Builder authentication, access governance, authoring, media, revision persistence,
+            Staging/Production content channels, signatures, public delivery, rollback, audit,
+            direct Builder Production deployment, and GitHub App organization configuration.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Separate</h3>
+          <p>
+            Native PointApp implementation, Apple/Google submissions, device push-provider
+            credentials, and app-side polling/verification/cache code. This Builder delivers the
+            contract those clients consume.
+          </p>
+        </section>
+        <section class="card">
+          <h3 class="danger">Never</h3>
+          <p>
+            Browser-selected authority, arbitrary first-user ownership, executable downloaded
+            content, Production rebuilt from a different candidate, public drafts/media,
+            secret-bearing source, destructive migration recovery, or a second Builder environment.
+          </p>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

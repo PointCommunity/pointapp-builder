@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ADR 0001 — Builder Control and Content Planes</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090d13;
+        --panel: #141c29;
+        --line: #2d394d;
+        --text: #eef4ff;
+        --muted: #aab5c7;
+        --accent: #7dd3fc;
+        --good: #86efac;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.62 Inter,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 900px;
+        margin: auto;
+        padding: 52px 22px 92px;
+      }
+      h1 {
+        font-size: clamp(2.1rem, 6vw, 4.1rem);
+        line-height: 1.05;
+      }
+      h2 {
+        color: var(--accent);
+        margin-top: 2.7rem;
+      }
+      .eyebrow {
+        color: var(--good);
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px;
+      }
+      .muted,
+      li {
+        color: var(--muted);
+      }
+      code {
+        color: #bae6fd;
+      }
+      .status {
+        display: inline-block;
+        border: 1px solid #276749;
+        background: #103c2b;
+        color: var(--good);
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-weight: 800;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Architecture decision record · 0001</p>
+      <p class="status">Accepted</p>
+      <h1>Separate the private Builder control plane from the signed PointApp content plane.</h1>
+      <p class="muted">
+        Date: 7 September 2026 · Owners: Point Community Church / PointApp Builder
+      </p>
+      <h2>Context</h2>
+      <p>
+        The PointApp Builder is an authenticated authoring and release-control application.
+        Installed PointApps need immediate content updates without requiring an App Store or Play
+        Store release for every editorial change. Executable native functionality must still ship
+        through the stores. The Builder itself has one Production deployment; “Staging” and
+        “Production” inside it refer only to PointApp content channels.
+      </p>
+      <h2>Decision</h2>
+      <section class="card">
+        <ul>
+          <li>
+            Host the React Builder and Worker API together at <code>appbuilder.pointatx.org</code>.
+          </li>
+          <li>
+            Store identities, memberships, drafts, immutable revisions, media metadata/approved
+            image bytes, release history, channel pointers, idempotency, and audit evidence in D1.
+          </li>
+          <li>
+            Authenticate with the existing organization GitHub App, but authorize every request from
+            current D1 membership.
+          </li>
+          <li>
+            Publish canonical, immutable, Ed25519-signed data manifests. PointApp Staging accepts
+            Publisher+; Production accepts only exact current Staging candidates from
+            Administrator+.
+          </li>
+          <li>
+            Expose anonymous, read-only, versioned Production content, public key, and referenced
+            media endpoints with ETags and explicit cache semantics.
+          </li>
+          <li>Keep the native PointApp and app-store workflow outside this repository.</li>
+        </ul>
+      </section>
+      <h2>Consequences</h2>
+      <h3>Positive</h3>
+      <ul>
+        <li>
+          Editorial updates can reach online installed apps as content without native release delay.
+        </li>
+        <li>
+          The public client does not need Builder credentials and can cryptographically verify
+          provenance.
+        </li>
+        <li>Production promotion has a provable same-digest relationship to Staging.</li>
+        <li>
+          One Worker deployment reduces operational coupling while route-level trust boundaries
+          remain explicit.
+        </li>
+      </ul>
+      <h3>Costs and obligations</h3>
+      <ul>
+        <li>
+          The native app must implement signature verification, schema compatibility, atomic
+          activation, refresh/backoff, and last-known-good caching.
+        </li>
+        <li>D1 migrations and channel-pointer transactions become release-critical.</li>
+        <li>Key identifiers and rotation must be supported before replacing the signing key.</li>
+        <li>
+          “Immediate” means available on next online refresh; offline devices cannot be forced to
+          update.
+        </li>
+      </ul>
+      <h2>Rejected alternatives</h2>
+      <ul>
+        <li>
+          <strong>Commit every content change to GitHub:</strong> broader permissions, slower
+          publication, and difficult optimistic collaboration.
+        </li>
+        <li>
+          <strong>Put roles/drafts in the SPA:</strong> publicly inspectable and unenforceable.
+        </li>
+        <li><strong>Rebuild for Production:</strong> breaks exact-candidate proof.</li>
+        <li>
+          <strong>Deliver JavaScript/configured executable behavior:</strong> crosses the data-only
+          boundary and app-store governance.
+        </li>
+        <li>
+          <strong>Create a Builder staging deployment:</strong> contradicts the established
+          one-Production operating model.
+        </li>
+      </ul>
+      <h2>Revisit when</h2>
+      <p class="muted">
+        A second organization/tenant is added, media scale requires R2, a native push provider is
+        selected, registration becomes organization-members-only, or signing-key rotation
+        requirements change.
+      </p>
+    </main>
+  </body>
+</html>

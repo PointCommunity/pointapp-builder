@@ -1,0 +1,8 @@
+extends:
+  - recommended
+
+rules:
+  # OAuth initiation/callback correctly return redirects, not synthetic 2xx responses.
+  operation-2xx-response: off
+  # Public health/session reads have defined safe states and do not require a synthetic 4xx.
+  operation-4xx-response: off

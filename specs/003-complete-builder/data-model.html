@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PointApp Builder — Data Model</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090d13;
+        --panel: #131b28;
+        --line: #2b374c;
+        --text: #eef4ff;
+        --muted: #aab6c9;
+        --blue: #7dd3fc;
+        --green: #86efac;
+        --red: #fca5a5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #090d13;
+        color: var(--text);
+        font:
+          15px/1.55 Inter,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1200px;
+        margin: auto;
+        padding: 48px 22px 90px;
+      }
+      h1 {
+        font-size: clamp(2.2rem, 6vw, 4.4rem);
+        line-height: 1;
+        margin: 0.3em 0;
+      }
+      h2 {
+        color: var(--blue);
+        margin-top: 2.8rem;
+      }
+      h3 {
+        color: var(--green);
+      }
+      .eyebrow {
+        color: var(--green);
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      .lede,
+      .muted,
+      td {
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px;
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 650px;
+      }
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--blue);
+      }
+      code {
+        color: #bae6fd;
+      }
+      .flow {
+        font:
+          14px/1.8 ui-monospace,
+          monospace;
+        color: var(--muted);
+        white-space: pre-wrap;
+      }
+      .warn {
+        color: var(--red);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Design model · immutable where it matters</p>
+      <h1>Authority, content, and release state.</h1>
+      <p class="lede">
+        Mutable collaboration records point to immutable content and release records. Database
+        checks and transactional batches protect transitions; the browser never assigns authority.
+      </p>
+      <h2>Relationship map</h2>
+      <section class="card flow">
+        GitHubIdentity 1 ─── 1 Membership Membership 1 ─── * Draft (creator / archive actor) Draft 1
+        ─── * ManifestRevision (append only) ManifestRevision * ─── 1 Manifest JSON ManifestRevision
+        1 ─── * ReleaseEnvelope (append only) ReleaseEnvelope 1 ─── * ChannelEvent (append only)
+        ChannelPointer 1 ─── 1 ReleaseEnvelope (current Staging or Production) MediaAsset 1 ─── *
+        MediaChunk (images only) Production Manifest * ─── * MediaAsset (computed reachability)
+        Membership 1 ─── * AuditEvent Membership 1 ─── * IdempotencyRecord
+      </section>
+      <h2>Identity and access</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Membership</h3>
+          <p class="muted">
+            <code>github_user_id</code> stable unique key; login, display name, avatar; role;
+            status; requested/approved/disabled timestamps; approver; version.
+          </p>
+          <p>
+            <strong>Role:</strong> Editor, Publisher, Administrator, Owner<br /><strong
+              >Status:</strong
+            >
+            Pending, Active, Disabled
+          </p>
+          <p class="warn">
+            Invariant: at least one Active Owner after bootstrap. New non-bootstrap identities are
+            Pending Editors.
+          </p>
+        </section>
+        <section class="card">
+          <h3>AuditEvent</h3>
+          <p class="muted">
+            Append-only event ID, time, request ID, actor identity/role/status snapshot, action,
+            target type/ID, outcome, bounded reason, safe metadata JSON.
+          </p>
+          <p>
+            Denied and failed mutations are recorded alongside successful state changes. Secret
+            values, OAuth tokens, raw bodies, and private keys are forbidden.
+          </p>
+        </section>
+        <section class="card">
+          <h3>IdempotencyRecord</h3>
+          <p class="muted">
+            Actor ID + operation + key unique tuple, normalized request hash, status, safe response
+            body/status, expiry, created/completed timestamps.
+          </p>
+          <p>
+            Reuse with a different request hash is a conflict. In-progress duplicates do not execute
+            twice.
+          </p>
+        </section>
+      </div>
+      <h2>Authoring</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Draft</h3>
+          <p class="muted">
+            ID, normalized name, state Active/Archived, current revision ID, created/updated/archive
+            actors and timestamps, optimistic version.
+          </p>
+          <p>Archive is reversible. Delete is not part of the user flow.</p>
+        </section>
+        <section class="card">
+          <h3>ManifestRevision</h3>
+          <p class="muted">
+            Immutable ID, draft ID, parent ID, monotonic sequence, canonical manifest JSON, SHA-256
+            checksum, schema version, label, actor, created time.
+          </p>
+          <p>
+            Save requires <code>expectedParentRevisionId</code>. A mismatch returns 409 and the
+            current safe revision descriptor.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Manifest structure</h3>
+          <p class="muted">
+            Identity, theme, settings, screens, elements, navigation, audiences, campaigns, and
+            referenced media IDs.
+          </p>
+          <p>
+            Object IDs are stable bounded identifiers. Ordered lists carry explicit order. External
+            URLs are HTTPS and policy checked. No executable script or member PII is allowed.
+          </p>
+        </section>
+      </div>
+      <h2>Media</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>MediaAsset</h3>
+          <p class="muted">
+            ID, kind Image/Audio/Video, lifecycle Ready/Archived, filename/title, MIME, byte size,
+            dimensions/duration, alt text or transcript/caption metadata, SHA-256, external HTTPS
+            URL when applicable, creator/time.
+          </p>
+        </section>
+        <section class="card">
+          <h3>MediaChunk</h3>
+          <p class="muted">
+            Image asset ID + zero-based chunk index unique key, binary payload, byte length. Chunks
+            are written transactionally with asset metadata and reconstructed in order.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Visibility</h3>
+          <p>
+            Authenticated active members may fetch draft assets. Anonymous users may fetch only
+            assets transitively referenced by the active Production manifest. Archived or orphaned
+            assets remain private.
+          </p>
+        </section>
+      </div>
+      <h2>Release model</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>ReleaseEnvelope</h3>
+          <p class="muted">
+            Immutable ID, source revision, manifest digest, canonical manifest bytes, validation
+            result digest, signing algorithm Ed25519, key ID, signature, publisher, created time.
+          </p>
+          <p>
+            The same envelope can be referenced by different channel events; channel is not part of
+            the manifest bytes.
+          </p>
+        </section>
+        <section class="card">
+          <h3>ChannelEvent</h3>
+          <p class="muted">
+            Append-only event ID, channel Staging/Production, release ID, kind
+            Publish/Promote/Rollback, actor, reason, prior event ID, created time.
+          </p>
+        </section>
+        <section class="card">
+          <h3>ChannelPointer</h3>
+          <p class="muted">
+            Exactly one row per channel with current event/release ID and monotonic version. Updated
+            in the same batch that appends its event and audit record.
+          </p>
+          <p class="warn">
+            Production promotion must reference the current Staging release. Rollback must reference
+            a prior Production release.
+          </p>
+        </section>
+      </div>
+      <h2>State transitions</h2>
+      <section class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Entity</th>
+              <th>From</th>
+              <th>Action</th>
+              <th>To</th>
+              <th>Authority and guard</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Membership</td>
+              <td>Absent</td>
+              <td>OAuth callback</td>
+              <td>Active Owner</td>
+              <td>Only fixed bootstrap GitHub ID; atomic insert</td>
+            </tr>
+            <tr>
+              <td>Membership</td>
+              <td>Absent</td>
+              <td>OAuth callback</td>
+              <td>Pending Editor</td>
+              <td>Any verified identity under current assumption</td>
+            </tr>
+            <tr>
+              <td>Membership</td>
+              <td>Pending</td>
+              <td>Approve</td>
+              <td>Active</td>
+              <td>Owner any role; Administrator Editor/Publisher only</td>
+            </tr>
+            <tr>
+              <td>Membership</td>
+              <td>Active</td>
+              <td>Disable/demote</td>
+              <td>Disabled or lower role</td>
+              <td>Never remove last Active Owner</td>
+            </tr>
+            <tr>
+              <td>Draft</td>
+              <td>Active</td>
+              <td>Save</td>
+              <td>Active + new revision</td>
+              <td>Editor+; expected parent must match</td>
+            </tr>
+            <tr>
+              <td>Draft</td>
+              <td>Active</td>
+              <td>Archive</td>
+              <td>Archived</td>
+              <td>Editor+; no destructive delete</td>
+            </tr>
+            <tr>
+              <td>Channel: Staging</td>
+              <td>Any</td>
+              <td>Publish revision</td>
+              <td>Signed release pointer</td>
+              <td>Publisher+; complete release validation</td>
+            </tr>
+            <tr>
+              <td>Channel: Production</td>
+              <td>Any</td>
+              <td>Promote Staging</td>
+              <td>Same release/digest</td>
+              <td>Administrator+; current Staging only</td>
+            </tr>
+            <tr>
+              <td>Channel: Production</td>
+              <td>Current</td>
+              <td>Rollback</td>
+              <td>Prior Production release</td>
+              <td>Owner; bounded reason required</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <h2>Database constraints</h2>
+      <ul class="muted">
+        <li>Foreign keys enabled; immutable tables expose no update/delete application path.</li>
+        <li>
+          Unique constraints cover GitHub identity, draft revision sequence, media checksum where
+          appropriate, channel name, request ID, and idempotency tuple.
+        </li>
+        <li>Role/status/channel/kind values use CHECK constraints.</li>
+        <li>
+          Lengths, counts, JSON schema, URLs, MIME, checksums, and accessible metadata are validated
+          in TypeScript before prepared statements; critical state enums are duplicated as database
+          checks.
+        </li>
+        <li>
+          Backward-compatible migrations only: create or add nullable/defaulted fields first,
+          backfill explicitly, and rehearse against a baseline snapshot.
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>

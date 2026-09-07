@@ -1,83 +1,49 @@
-interface DatabaseStatement {
-  first(): Promise<{ ok?: unknown } | null>;
-}
-
-interface DatabaseBinding {
-  prepare(query: string): DatabaseStatement;
-}
+import { createServerApp, type ServerEnvironment } from '../src/server/app';
+import { applySecurityHeaders } from '../src/server/security';
 
 interface AssetBinding {
   fetch(request: Request): Promise<Response>;
 }
 
-export interface RuntimeEnv {
-  DB: DatabaseBinding;
+export interface RuntimeEnv extends ServerEnvironment {
   ASSETS: AssetBinding;
-  ENVIRONMENT: string;
-  APP_VERSION: string;
   BUILDER_ORIGIN: string;
-  AUTHENTICATION_ENABLED: string;
-  PUBLISHING_ENABLED: string;
+  BOOTSTRAP_OWNER_GITHUB_ID?: string;
+  REGISTRATION_POLICY?: string;
+  SIGNING_KEY_ID?: string;
+  AUTH_RATE_LIMITER?: RateLimit;
+  MUTATION_RATE_LIMITER?: RateLimit;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  SESSION_SECRET?: string;
+  RELEASE_SIGNING_PRIVATE_JWK?: string;
+  RELEASE_SIGNING_PUBLIC_JWK?: string;
 }
 
-const responseHeaders = {
-  'cache-control': 'no-store',
-  'content-type': 'application/json; charset=utf-8',
-  'x-content-type-options': 'nosniff',
-};
-
-function json(body: unknown, status = 200, headers?: HeadersInit): Response {
-  return Response.json(body, { status, headers: { ...responseHeaders, ...headers } });
-}
-
-async function databaseIsReachable(database: DatabaseBinding): Promise<boolean> {
-  try {
-    const result = await database.prepare('SELECT 1 AS ok').first();
-    return result?.ok === 1;
-  } catch {
-    return false;
-  }
+function isServerRoute(pathname: string): boolean {
+  return (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/content/')
+  );
 }
 
 export async function handleRequest(request: Request, env: RuntimeEnv): Promise<Response> {
   const url = new URL(request.url);
-
   const builderHostname = new URL(env.BUILDER_ORIGIN).hostname;
   if (url.protocol === 'http:' && url.hostname === builderHostname) {
     url.protocol = 'https:';
     return Response.redirect(url, 308);
   }
 
-  if (url.pathname === '/api/health') {
-    if (request.method !== 'GET')
-      return json({ code: 'METHOD_NOT_ALLOWED' }, 405, { allow: 'GET' });
-    const reachable = await databaseIsReachable(env.DB);
-    return json(
-      {
-        ok: reachable,
-        environment: env.ENVIRONMENT,
-        version: env.APP_VERSION,
-        database: reachable ? 'reachable' : 'unavailable',
-        authentication: env.AUTHENTICATION_ENABLED === 'true' ? 'enabled' : 'disabled',
-        publishing: env.PUBLISHING_ENABLED === 'true' ? 'enabled' : 'disabled',
-      },
-      reachable ? 200 : 503,
-    );
-  }
+  if (isServerRoute(url.pathname)) return createServerApp(env).fetch(request);
 
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) {
-    return json(
-      {
-        code: 'FOUNDATION_LOCKED',
-        message: 'Authentication and content mutations are not configured.',
-      },
-      503,
-    );
-  }
-
-  return env.ASSETS.fetch(request);
+  const asset = await env.ASSETS.fetch(request);
+  return applySecurityHeaders(asset, {
+    cacheControl: asset.headers.get('cache-control') ?? 'public, max-age=0, must-revalidate',
+    contentSecurityPolicy:
+      "default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: https:; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'",
+  });
 }
 
-export default {
-  fetch: handleRequest,
-};
+export default { fetch: handleRequest };

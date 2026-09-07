@@ -28,7 +28,7 @@
     "db:migrate:local": "wrangler d1 migrations apply pointapp-builder --local",
     "db:migrate:remote": "npm run cloudflare:verify-account && wrangler d1 migrations apply pointapp-builder --remote",
     "db:migrate:test": "vitest run tests/integration/migrations.test.ts",
-    "check:foundation": "vitest run tests/unit/server tests/unit/content/canonical.test.ts tests/integration/migrations.test.ts",
+    "check:foundation": "vitest run tests/unit/server tests/unit/domain tests/unit/content/canonical.test.ts tests/integration/migrations.test.ts tests/integration/idempotency-audit.test.ts tests/unit/worker.test.ts",
     "check:experience": "npm run test:performance && playwright test --grep @experience",
     "check": "npm run format:check && npm run types:check && npm run typecheck && npm run lint -- --max-warnings=0 && npm run contract:check && npm run db:migrate:test && npm run test:coverage && npm run build"
   },

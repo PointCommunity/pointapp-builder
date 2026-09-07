@@ -14,21 +14,21 @@ Internal workflow state. Human-readable scope and decisions are in the adjacent 
 
 ## Phase 2 — Foundational security and persistence
 
-- [ ] T008 [P] Write request-security tests in `tests/unit/server/request-security.test.ts`
-- [ ] T009 [P] Write safe-error and correlation tests in `tests/unit/server/problems.test.ts`
-- [ ] T010 [P] Write canonical JSON/hash/signature tests in `tests/unit/content/canonical.test.ts`
-- [ ] T011 [P] Write migration-from-baseline tests in `tests/integration/migrations.test.ts`
-- [ ] T012 Create forward-only schema for memberships, drafts, revisions, media, releases, channels, audits, and idempotency in `migrations/0002_complete_builder.sql`
-- [ ] T013 Implement shared identifiers, timestamps, pagination, and bounded schemas in `src/domain/primitives.ts`
-- [ ] T014 Implement canonical JSON, SHA-256, base64url, and Ed25519 helpers in `src/content/crypto.ts`
-- [ ] T015 Implement RFC 9457-style safe problems and request correlation in `src/server/problems.ts`
-- [ ] T016 Implement exact-origin, body/content-type limits, security headers, and safe caching in `src/server/security.ts`
-- [ ] T017 Implement Cloudflare abuse-limit adapter with local deterministic fallback in `src/server/rate-limit.ts`
-- [ ] T018 Implement D1 query/result helpers and transactional batch composition in `src/server/d1.ts`
-- [ ] T019 Implement actor-scoped idempotency claims, replay, mismatch conflict, and expiry in `src/server/idempotency.ts`
-- [ ] T020 Implement append-only redacted audit service in `src/server/audit.ts`
-- [ ] T021 Compose Hono API, public routes, asset fallback, and centralized error handling in `src/server/app.ts` and `worker/index.ts`
-- [ ] T022 Verify Phase 2 with migration, unit, integration, and security-header suites via `npm run check:foundation`
+- [x] T008 [P] Write request-security tests in `tests/unit/server/request-security.test.ts`
+- [x] T009 [P] Write safe-error and correlation tests in `tests/unit/server/problems.test.ts`
+- [x] T010 [P] Write canonical JSON/hash/signature tests in `tests/unit/content/canonical.test.ts`
+- [x] T011 [P] Write migration-from-baseline tests in `tests/integration/migrations.test.ts`
+- [x] T012 Create forward-only schema for memberships, drafts, revisions, media, releases, channels, audits, and idempotency in `migrations/0001_complete_builder.sql`
+- [x] T013 Implement shared identifiers, timestamps, pagination, and bounded schemas in `src/domain/primitives.ts`
+- [x] T014 Implement canonical JSON, SHA-256, base64url, and Ed25519 helpers in `src/content/crypto.ts`
+- [x] T015 Implement RFC 9457-style safe problems and request correlation in `src/server/problems.ts`
+- [x] T016 Implement exact-origin, body/content-type limits, security headers, and safe caching in `src/server/security.ts`
+- [x] T017 Implement Cloudflare abuse-limit adapter with local deterministic fallback in `src/server/rate-limit.ts`
+- [x] T018 Implement D1 query/result helpers and transactional batch composition in `src/server/d1.ts`
+- [x] T019 Implement actor-scoped idempotency claims, replay, mismatch conflict, and expiry in `src/server/idempotency.ts`
+- [x] T020 Implement append-only redacted audit service in `src/server/audit.ts`
+- [x] T021 Compose Hono API, public routes, asset fallback, and centralized error handling in `src/server/app.ts` and `worker/index.ts`
+- [x] T022 Verify Phase 2 with migration, unit, integration, and security-header suites via `npm run check:foundation`
 
 ## Phase 3 — US1 Bootstrap ownership and govern access (P1)
 

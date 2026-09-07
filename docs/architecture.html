@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PointApp Builder Architecture</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080c11;
+        --panel: #111923;
+        --line: #2a3a49;
+        --text: #eef5f7;
+        --muted: #9aabba;
+        --accent: #69d4c5;
+        --gold: #efbd6c;
+        --red: #ff8989;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(145deg, #0c151d, #080c11 45%);
+        color: var(--text);
+        font:
+          16px/1.6 ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: auto;
+        padding: 56px 0 96px;
+      }
+      h1 {
+        font-size: clamp(2.3rem, 7vw, 4.8rem);
+        line-height: 1;
+        letter-spacing: -0.055em;
+      }
+      h2 {
+        margin-top: 2.5em;
+      }
+      p,
+      li {
+        color: var(--muted);
+      }
+      a {
+        color: var(--accent);
+      }
+      .eyebrow {
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(7, auto);
+        align-items: center;
+        gap: 10px;
+        margin: 28px 0;
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: #0c1219;
+        overflow: auto;
+      }
+      .node {
+        min-width: 135px;
+        min-height: 110px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 15px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel);
+      }
+      .node strong {
+        color: var(--text);
+      }
+      .node span {
+        color: var(--muted);
+        font-size: 0.75rem;
+        margin-top: 6px;
+      }
+      .node--gate {
+        border-color: #5c4a2b;
+        background: #221b11;
+      }
+      .arrow {
+        color: var(--accent);
+        font-size: 1.4rem;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+      }
+      .card h3 {
+        color: var(--accent);
+      }
+      .warning {
+        border-left: 4px solid var(--gold);
+      }
+      code {
+        color: #fff;
+        background: #18242f;
+        padding: 0.15em 0.35em;
+        border-radius: 5px;
+      }
+      @media (max-width: 700px) {
+        .flow {
+          grid-template-columns: 1fr;
+        }
+        .arrow {
+          transform: rotate(90deg);
+          text-align: center;
+        }
+        .node {
+          min-height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Architecture decision record · Foundation</p>
+      <h1>Content moves.<br />Code stays governed.</h1>
+      <p>
+        The Builder is a control plane for versioned content. It does not become a second app store
+        and it does not write directly into the PointApp repository.
+      </p>
+
+      <h2>Release path</h2>
+      <div
+        class="flow"
+        role="img"
+        aria-label="Editor draft moves through validation, staging, administrator approval, a signed channel release, and PointApp verification"
+      >
+        <div class="node">
+          <strong>Editor draft</strong><span>Typed screens, elements, assets</span>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">
+          <strong>Validation</strong><span>Schema, links, assets, accessibility</span>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">
+          <strong>Staging</strong><span>Exact revision in phone/tablet web view</span>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node node--gate">
+          <strong>Admin / Owner</strong><span>Promotes unchanged verified candidate</span>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">
+          <strong>Signed channel</strong><span>Manifest, digest, signature, key ID</span>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">
+          <strong>PointApp</strong><span>Verify, atomic cache, last-known-good rollback</span>
+        </div>
+      </div>
+
+      <h2>Separated responsibilities</h2>
+      <div class="cards">
+        <section class="card">
+          <h3>GitHub Pages client</h3>
+          <p>
+            Loads the authenticated workspace from an API, renders controls and previews, and holds
+            no privileged credentials.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Builder API</h3>
+          <p>
+            Authenticates collaborators, enforces roles, stores revisions, coordinates releases,
+            audits mutations, and signs approved envelopes.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Content delivery</h3>
+          <p>
+            Serves immutable Staging and Production envelopes over HTTPS with cache controls and
+            rollback-safe identifiers.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Installed PointApp</h3>
+          <p>
+            Ships native renderers and capabilities through stores, then accepts only compatible
+            data manifests from the release channel.
+          </p>
+        </section>
+      </div>
+
+      <h2>Why data-only updates</h2>
+      <p>
+        Apple’s review rules prohibit downloaded code that changes app features or functionality,
+        and Google Play prohibits self-updates or executable code fetched outside Play. PointApp
+        content therefore uses a finite, versioned element vocabulary implemented inside the
+        reviewed native binary. New native capabilities require normal store releases.
+      </p>
+
+      <h2>Hosting constraint</h2>
+      <section class="card warning">
+        <p>
+          GitHub documents private Pages access for Enterprise Cloud and private-repository Pages
+          availability on paid plans. The current PointCommunity organization reports the Free plan.
+          The repository stays private, so the Pages deployment remains gated until the organization
+          plan changes or another host is explicitly approved.
+        </p>
+      </section>
+
+      <h2>Primary references</h2>
+      <ul>
+        <li>
+          <a
+            href="https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages"
+            >GitHub Pages custom workflows</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://docs.github.com/en/enterprise-cloud@latest/pages/getting-started-with-github-pages/changing-the-visibility-of-your-github-pages-site"
+            >GitHub Pages access control</a
+          >
+        </li>
+        <li>
+          <a href="https://developer.apple.com/app-store/review/guidelines/"
+            >Apple App Review Guidelines, section 2.5.2</a
+          >
+        </li>
+        <li>
+          <a href="https://support.google.com/googleplay/android-developer/answer/16559646"
+            >Google Play Device and Network Abuse policy</a
+          >
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>

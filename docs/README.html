@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PointApp Builder</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090d12;
+        --panel: #111923;
+        --line: #283747;
+        --text: #eff6f8;
+        --muted: #9aacba;
+        --accent: #69d4c5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at 80% 0, #153039, #090d12 44%);
+        color: var(--text);
+        font:
+          16px/1.65 ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        width: min(960px, calc(100% - 32px));
+        margin: auto;
+        padding: 64px 0 96px;
+      }
+      h1 {
+        font-size: clamp(2.5rem, 8vw, 5rem);
+        line-height: 0.95;
+        letter-spacing: -0.055em;
+      }
+      h2 {
+        margin-top: 2.2em;
+      }
+      .tag {
+        color: var(--accent);
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-size: 0.72rem;
+      }
+      .card {
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+      }
+      a {
+        color: var(--accent);
+      }
+      code {
+        color: #fff;
+        background: #18232e;
+        padding: 0.15em 0.35em;
+        border-radius: 5px;
+      }
+      p,
+      li {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="tag">Private product foundation</p>
+      <h1>PointApp Builder</h1>
+      <p>
+        Role-governed content authoring and release infrastructure for the Point Community Church
+        phone and tablet application.
+      </p>
+      <section class="card">
+        <strong>Foundation status</strong>
+        <p>
+          The repository currently contains the product specification, versioned content and release
+          contracts, a responsive Builder shell, a phone/tablet staging preview, and quality
+          automation. Collaborative persistence, protected API services, PointApp integration, and
+          Production publishing remain intentionally disconnected.
+        </p>
+      </section>
+      <h2>Start locally</h2>
+      <ol>
+        <li>Install Node.js 22.13 or newer.</li>
+        <li>Run <code>npm ci</code>.</li>
+        <li>Run <code>npm run dev</code>.</li>
+        <li>Run <code>npm run check</code> and <code>npm run test:e2e</code> before review.</li>
+      </ol>
+      <h2>Source map</h2>
+      <ul>
+        <li><code>src/content</code> — mobile-safe data contracts.</li>
+        <li><code>src/domain</code> — authorization and release policy.</li>
+        <li><code>src/preview</code> — renderer used by the staging canvas.</li>
+        <li><code>src/client</code> — separate Builder panels and workspace shell.</li>
+        <li><code>specs/001-foundation/spec.html</code> — governing foundation specification.</li>
+        <li><code>docs/architecture.html</code> — system boundaries and delivery path.</li>
+      </ul>
+      <h2>Hosting status</h2>
+      <p>
+        The repository is private. The organization currently uses GitHub Free, which does not
+        support Pages builds from private organization repositories. The Pages workflow is present
+        but requires both an explicit repository variable and a typed manual confirmation after
+        eligibility changes.
+      </p>
+    </main>
+  </body>
+</html>

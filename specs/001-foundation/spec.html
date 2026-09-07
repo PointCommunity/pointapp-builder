@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PointApp Builder Foundation Specification</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090d12;
+        --panel: #111923;
+        --line: #263445;
+        --text: #eef4fa;
+        --muted: #9fb0c2;
+        --accent: #6fd3c2;
+        --gold: #f0bd66;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top right, #16293a 0, #090d12 42%);
+        color: var(--text);
+        font:
+          16px/1.6 Inter,
+          ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        width: min(1100px, calc(100% - 32px));
+        margin: auto;
+        padding: 56px 0 96px;
+      }
+      h1 {
+        font-size: clamp(2.2rem, 6vw, 4.5rem);
+        line-height: 1;
+        letter-spacing: -0.05em;
+        margin: 0.2em 0;
+      }
+      h2 {
+        margin-top: 2.4em;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.35em;
+      }
+      h3 {
+        color: var(--accent);
+      }
+      p,
+      li {
+        color: var(--muted);
+      }
+      strong,
+      code {
+        color: var(--text);
+      }
+      code {
+        background: #182331;
+        padding: 0.15em 0.35em;
+        border-radius: 0.3em;
+      }
+      pre {
+        overflow: auto;
+        padding: 18px;
+        background: #080c11;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+      }
+      .eyebrow {
+        color: var(--accent);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-weight: 800;
+        font-size: 0.75rem;
+      }
+      .callout,
+      .card {
+        background: color-mix(in srgb, var(--panel) 92%, transparent);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 20px;
+      }
+      .callout {
+        border-left: 4px solid var(--gold);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        display: block;
+        overflow: auto;
+      }
+      th,
+      td {
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        text-align: left;
+        white-space: nowrap;
+      }
+      th {
+        background: #172230;
+      }
+      .yes {
+        color: var(--accent);
+        font-weight: 800;
+      }
+      .no {
+        color: #7f90a3;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Specification 001 · Foundation</p>
+      <h1>PointApp Builder</h1>
+      <p>
+        A private, role-governed authoring system for content that the PointApp can receive as
+        signed, versioned data updates on phones and tablets.
+      </p>
+
+      <aside class="callout">
+        <strong>Scope boundary:</strong> this foundation establishes the product contract,
+        repository, access policy, responsive Builder shell, phone/tablet staging preview, content
+        manifest, tests, and deployment path. It does not claim to deliver the complete Builder,
+        authentication service, native PointApp, app-store releases, or a production content
+        channel.
+      </aside>
+
+      <h2>1. Objective</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Authors</h3>
+          <p>Editors arrange app content and elements without editing application source.</p>
+        </section>
+        <section class="card">
+          <h3>Release staff</h3>
+          <p>
+            Publishers prove an exact content candidate in Staging; Administrators and Owners may
+            later promote the verified candidate.
+          </p>
+        </section>
+        <section class="card">
+          <h3>App users</h3>
+          <p>
+            Installed phone and tablet apps receive approved content without downloading executable
+            code or waiting for a store release.
+          </p>
+        </section>
+      </div>
+
+      <h2>2. Architecture contract</h2>
+      <ol>
+        <li>
+          The Builder edits a typed <strong>content manifest</strong>, never native executable code.
+        </li>
+        <li>
+          Every save creates a revision; every release identifies one immutable revision and digest.
+        </li>
+        <li>
+          Staging and Production are separate release channels backed by the same renderer contract.
+        </li>
+        <li>
+          The web staging preview uses the same manifest semantics and device breakpoints as
+          PointApp.
+        </li>
+        <li>
+          The installed app polls or receives a push hint, downloads the signed manifest, verifies
+          schema/version/digest/signature, stores it atomically, and retains the last-known-good
+          manifest for rollback.
+        </li>
+        <li>
+          Native capabilities and executable changes continue through Apple App Store and Google
+          Play releases.
+        </li>
+      </ol>
+
+      <h2>3. Access policy</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Editor</th>
+            <th>Publisher</th>
+            <th>Administrator</th>
+            <th>Owner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Edit drafts and assets</td>
+            <td class="yes">Yes</td>
+            <td class="yes">Yes</td>
+            <td class="yes">Yes</td>
+          </tr>
+          <tr>
+            <td>Publish exact revision to Staging</td>
+            <td class="no">No</td>
+            <td class="yes">Yes</td>
+            <td class="yes">Yes</td>
+          </tr>
+          <tr>
+            <td>Promote verified Staging revision</td>
+            <td class="no">No</td>
+            <td class="no">No</td>
+            <td class="yes">Yes</td>
+            <td class="yes">Yes</td>
+          </tr>
+          <tr>
+            <td>Manage Editors and Publishers</td>
+            <td class="no">No</td>
+            <td class="no">No</td>
+            <td class="yes">Yes</td>
+            <td class="yes">Yes</td>
+          </tr>
+          <tr>
+            <td>Manage Administrators / ownership</td>
+            <td class="no">No</td>
+            <td class="no">No</td>
+            <td class="no">No</td>
+            <td class="yes">Yes</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Authorization must be enforced by the future API. Hidden or disabled browser controls are
+        guidance only, never the security boundary.
+      </p>
+
+      <h2>4. Initial content model</h2>
+      <p>
+        A manifest contains organization identity, theme tokens, bottom navigation, ordered screens,
+        reusable assets, content elements, schema version, release revision, and timestamps.
+        Foundation elements are <code>hero</code>, <code>text</code>, <code>action</code>,
+        <code>media</code>, <code>event-list</code>, and <code>divider</code>. New element types
+        require schema, renderer, inspector, accessibility, migration, and compatibility tests.
+      </p>
+
+      <h2>5. Technology and hosting</h2>
+      <ul>
+        <li>React, strict TypeScript, Vite, Zod, Vitest, Testing Library, and Playwright.</li>
+        <li>
+          GitHub Pages serves only the static Builder client. No secret, role assignment, draft, or
+          release credential may be bundled into it.
+        </li>
+        <li>
+          A separate authenticated API and durable store will be selected before collaborative
+          editing begins.
+        </li>
+        <li>
+          The current PointCommunity GitHub Free plan cannot publish Pages from this private
+          organization repository. The Pages workflow remains manually gated until the plan or host
+          decision changes.
+        </li>
+      </ul>
+
+      <h2>6. Commands</h2>
+      <pre><code>npm ci
+npm run dev
+npm run format:check
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run test:e2e</code></pre>
+
+      <h2>7. Project structure</h2>
+      <pre><code>src/client/                 Builder application shell
+src/domain/                 Access and release rules
+src/content/                Versioned PointApp content contract
+src/preview/                Phone/tablet staging renderer
+specs/001-foundation/       Product and machine-readable contracts
+tests/unit/                 Domain and schema tests
+tests/e2e/                  Browser and responsive checks
+docs/                       Dark-mode human-facing architecture
+tasks/                      Internal implementation plan and task state
+.github/workflows/          Quality and manually gated Pages delivery</code></pre>
+
+      <h2>8. Code style</h2>
+      <pre><code>export function can(actor: Actor, capability: Capability): boolean {
+  return roleCapabilities[actor.role].includes(capability);
+}</code></pre>
+      <p>
+        Use explicit domain names, pure functions for policy, discriminated unions for elements,
+        exhaustive rendering, semantic HTML, and mobile-first CSS. Keep platform concerns behind
+        interfaces.
+      </p>
+
+      <h2>9. Testing strategy</h2>
+      <ul>
+        <li>
+          Unit tests prove access inheritance, manifest validation, element compatibility, and
+          release transitions.
+        </li>
+        <li>Component tests prove controls reflect policy and previews render the manifest.</li>
+        <li>
+          Browser tests cover keyboard access and 320, 768, 1024, and 1280 pixel layouts with no
+          horizontal clipping.
+        </li>
+        <li>
+          Contract fixtures must be consumable independently by future iOS and Android clients.
+        </li>
+      </ul>
+
+      <h2>10. Boundaries</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Always</h3>
+          <p>
+            Validate inputs, identify exact revisions, preserve last-known-good content, test
+            permissions server-side, keep staging distinct, and maintain accessible touch targets.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Ask first</h3>
+          <p>
+            Select the backend/identity provider, enable public exposure, create production
+            credentials, connect PointApp, promote Production, or begin store submissions.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Never</h3>
+          <p>
+            Place secrets in Pages, treat client-side roles as security, directly mutate PointApp
+            source, ship executable code in content manifests, silently overwrite a newer revision,
+            or bypass app-store release controls.
+          </p>
+        </section>
+      </div>
+
+      <h2>11. Foundation success criteria</h2>
+      <ul>
+        <li>
+          A private <code>PointCommunity/pointapp-builder</code> repository exists with an auditable
+          initial commit.
+        </li>
+        <li>
+          The responsive shell exposes separated Content, Library, Navigation, Branding, Audience,
+          Notifications, Releases, Access, and Settings panels.
+        </li>
+        <li>A representative manifest renders in both phone and tablet staging frames.</li>
+        <li>
+          The four-role capability matrix and versioned manifest are executable, tested contracts.
+        </li>
+        <li>Quality, build, and browser checks pass locally and in GitHub Actions.</li>
+        <li>
+          Pages deployment is configured but cannot activate from a private repository until the
+          organization plan supports it.
+        </li>
+      </ul>
+
+      <h2>12. Deferred decisions</h2>
+      <ul>
+        <li>Identity provider and account recovery.</li>
+        <li>Authenticated API/store host and operating-cost ceiling.</li>
+        <li>Production approval details beyond the initial Administrator/Owner gate.</li>
+        <li>
+          Native PointApp framework, offline media policy, push provider, analytics, and app-store
+          accounts.
+        </li>
+        <li>Whether PointApp remains Point-only or later becomes multi-organization.</li>
+      </ul>
+    </main>
+  </body>
+</html>

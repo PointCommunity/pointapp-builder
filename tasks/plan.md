@@ -20,7 +20,7 @@ Research and product boundary -> content and access contracts -> responsive prev
 - [x] Add format, lint, type, unit, build, browser, and security-oriented CI gates.
 - [x] Add a manual-only GitHub Pages workflow pending private Pages eligibility.
 - [x] Create and push the private PointCommunity repository.
-- [ ] Read back repository visibility, default branch, commit, Actions, and Pages state.
+- [x] Read back repository visibility, default branch, commit, Actions, and Pages state.
 
 ## Risks
 

@@ -15,6 +15,6 @@
 - [x] Task 5: Establish quality and delivery automation
   - Acceptance: CI gates every push/PR; Pages is manual-only pending eligibility.
   - Verify: local full suite and workflow inspection.
-- [ ] Task 6: Create and verify the private GitHub repository
+- [x] Task 6: Create and verify the private GitHub repository
   - Acceptance: `PointCommunity/pointapp-builder` is private and exact `main` is pushed.
   - Verify: GitHub repository, commit, workflow, and Pages API readback.

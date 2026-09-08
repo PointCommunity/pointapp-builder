@@ -24,9 +24,9 @@
 - [x] Task 8: Complete local verification
   - Acceptance: skills, format, types, lint, contracts, migrations, coverage, security, build, performance, browser, HTML, and diff checks pass.
   - Verify: repository commands and validators.
-- [ ] Task 9: Complete live pipeline readback
+- [x] Task 9: Complete live pipeline readback
   - Acceptance: the live audit passes with only the known branch-rule and any still-open exact bootstrap-PR warning.
   - Verify: npm run pipeline:health.
-- [ ] Task 10: Commit, push, and verify exact-head CI
+- [x] Task 10: Commit, push, and verify exact-head CI
   - Acceptance: only bootstrap-owned files are committed to the current bootstrap branch and every GitHub Quality job passes for the exact head.
   - Verify: Git status/diff, remote SHA, bootstrap PR head, and Actions readback.

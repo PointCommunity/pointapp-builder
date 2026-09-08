@@ -5,16 +5,14 @@ test('saved content flows through Staging to exact Production and supports cache
   request,
 }) => {
   await page.goto('/auth/dev?githubUserId=1202831&login=brimdor');
-  if (
-    await page
-      .getByLabel('New draft name')
-      .isVisible()
-      .catch(() => false)
-  ) {
+  const newDraftName = page.getByLabel('New draft name');
+  const draftActions = page.getByText('Draft actions');
+  await expect(newDraftName.or(draftActions)).toBeVisible();
+  if (await newDraftName.isVisible().catch(() => false)) {
     await page.getByLabel('New draft name').fill(`Release ${Date.now()}`);
     await page.getByRole('button', { name: 'Create first draft' }).click();
   } else {
-    await page.getByText('Draft actions').click();
+    await draftActions.click();
     await page
       .getByRole('region', { name: 'Draft and revision controls' })
       .getByRole('button', { name: 'Duplicate' })

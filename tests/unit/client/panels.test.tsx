@@ -29,6 +29,7 @@ describe('persistent manifest panels', () => {
   it('adds and reorders screen content and edits navigation', () => {
     const onChange = vi.fn();
     const { rerender } = render(<ContentPanel manifest={sampleManifest} onChange={onChange} />);
+    expect(screen.getByRole('button', { name: 'Edit Home' })).toHaveClass('screen-selector');
     fireEvent.change(screen.getByLabelText('Add element'), { target: { value: 'scripture' } });
     fireEvent.click(screen.getByRole('button', { name: /Add to Home/ }));
     expect(onChange.mock.lastCall?.[0].screens[0].elements.at(-1).type).toBe('scripture');

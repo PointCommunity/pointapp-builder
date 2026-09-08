@@ -1052,6 +1052,20 @@ summary {
   margin: 0;
   padding: 0;
 }
+.screen-selector {
+  min-height: 44px;
+  border: 1px solid #40515f;
+  border-radius: 10px;
+  color: #e7eef1;
+  background: #1a2530;
+  font-weight: 700;
+  cursor: pointer;
+}
+.screen-selector[aria-pressed='true'] {
+  border-color: #75e6ad;
+  color: #071815;
+  background: #75e6ad;
+}
 .check {
   display: flex;
   align-items: center;

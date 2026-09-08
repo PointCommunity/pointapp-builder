@@ -13,16 +13,14 @@ async function newDraft(page: Page, prefix: string) {
   return name;
 }
 async function isolatedDraft(page: Page, prefix: string) {
-  if (
-    await page
-      .getByLabel('New draft name')
-      .isVisible()
-      .catch(() => false)
-  ) {
+  const newDraftName = page.getByLabel('New draft name');
+  const draftActions = page.getByText('Draft actions');
+  await expect(newDraftName.or(draftActions)).toBeVisible();
+  if (await newDraftName.isVisible().catch(() => false)) {
     await newDraft(page, prefix);
     return;
   }
-  await page.getByText('Draft actions').click();
+  await draftActions.click();
   await page
     .getByRole('region', { name: 'Draft and revision controls' })
     .getByRole('button', { name: 'Duplicate' })

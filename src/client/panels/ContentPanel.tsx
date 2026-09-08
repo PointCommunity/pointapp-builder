@@ -403,6 +403,7 @@ export function ContentPanel({ manifest, onChange, readOnly }: ManifestPanelProp
           <article key={screen.id}>
             <button
               aria-pressed={active.id === screen.id}
+              className="screen-selector"
               onClick={() => setScreenId(screen.id)}
               type="button"
             >

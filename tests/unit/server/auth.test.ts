@@ -40,7 +40,8 @@ function gateway(): GitHubIdentityGateway {
 describe('GitHub App OAuth', () => {
   it('exchanges the code with PKCE and revalidates the GitHub identity', async () => {
     const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
-    const fetcher = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const fetcher = async function (this: unknown, input: RequestInfo | URL, init?: RequestInit) {
+      expect(this).toBeUndefined();
       requests.push({ input, init });
       if (requests.length === 1) {
         return Response.json({ access_token: 'ghu_valid-user-access-token' });

@@ -116,9 +116,9 @@ Internal workflow state. Human-readable scope and decisions are in the adjacent 
 - [x] T086 [P] Add dependency, secret, and static-bundle leak checks to `package.json` and `.github/workflows/quality.yml`
 - [x] T087 Update `AGENTS.md`, `docs/README.html`, and `docs/architecture.html` for implemented Production behavior
 - [x] T088 Run format, generated bindings, types, lint, contract, migrations, coverage, build, audit, performance, responsive, accessibility, and full E2E gates with zero unexplained skips
-- [ ] T089 Configure the existing PointSite Builder GitHub App with exact PointApp callback and all-organization repository selection, preserving permissions and existing callbacks
-- [ ] T090 Install PointApp Builder OAuth/session/release-signing secrets and public key identifier without writing or printing secret values
-- [ ] T091 Rehearse and apply the D1 production migration, then verify schema and preserved baseline records
+- [x] T089 Configure the existing PointSite Builder GitHub App with exact PointApp callback and all-organization repository selection, preserving permissions and existing callbacks
+- [x] T090 Install PointApp Builder OAuth/session/release-signing secrets and public key identifier without writing or printing secret values
+- [x] T091 Rehearse and apply the D1 production migration, then verify schema and preserved baseline records
 - [ ] T092 Commit/push reviewed changes, obtain green GitHub Quality for the exact commit, merge to `main`, and confirm clean exact local `main`
 - [ ] T093 Deploy the exact passing `main` commit directly to Builder Production and run live API/browser/authenticated verification before inviting Owner human testing
 

@@ -26,8 +26,8 @@ describe('PointApp Builder foundation shell', () => {
 
     const staging = screen.getByRole('button', { name: 'Publish to Staging' });
     const production = screen.getByRole('button', { name: 'Promote Staging to Production' });
-    expect(staging).toBeEnabled();
-    expect(production).toBeEnabled();
+    expect(staging).toBeDisabled();
+    expect(production).toBeDisabled();
     expect(screen.queryByLabelText('Foundation role')).not.toBeInTheDocument();
     expect(screen.getByText('@brimdor')).toBeVisible();
   });
@@ -53,6 +53,7 @@ describe('PointApp Builder foundation shell', () => {
       'Releases',
       'Access',
       'Settings',
+      'Operations',
     ]) {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
     }

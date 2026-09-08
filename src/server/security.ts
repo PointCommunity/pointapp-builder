@@ -52,7 +52,10 @@ export function applySecurityHeaders(
   options: { cacheControl?: string; contentSecurityPolicy?: string } = {},
 ): Response {
   const headers = new Headers(response.headers);
-  headers.set('cache-control', options.cacheControl ?? 'no-store');
+  headers.set(
+    'cache-control',
+    options.cacheControl ?? response.headers.get('cache-control') ?? 'no-store',
+  );
   headers.set(
     'content-security-policy',
     options.contentSecurityPolicy ?? "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",

@@ -161,7 +161,11 @@ paths:
       operationId: listDrafts
       security: [{ sessionCookie: [] }]
       parameters:
-        [{ $ref: '#/components/parameters/Cursor' }, { $ref: '#/components/parameters/Limit' }]
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+        - in: query
+          name: state
+          schema: { type: string, enum: [active, all], default: active }
       responses:
         '200':
           description: Draft summaries.
@@ -365,12 +369,36 @@ paths:
         '200': { description: Image bytes or redirect/metadata response for external media. }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Media]
+      summary: Archive or recover a media asset
+      operationId: updateMediaState
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/MediaId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              additionalProperties: false
+              properties: { state: { type: string, enum: [ready, archived] } }
+      responses:
+        '200':
+          description: Updated media lifecycle state.
+          content: { application/json: { schema: { $ref: '#/components/schemas/MediaAsset' } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /api/releases/validate:
     post:
       tags: [Releases]
       summary: Validate a saved revision
       operationId: validateRevision
       security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody:
         required: true
         content:

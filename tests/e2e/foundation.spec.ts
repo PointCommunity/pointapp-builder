@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function signIn(page: Page, githubUserId = '1202831', login = 'brimdor') {
   await page.goto(`/auth/dev?githubUserId=${githubUserId}&login=${login}`);
-  await expect(page.getByText(`@${login}`)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
 }
 
 const viewports = [
@@ -54,8 +54,8 @@ test('new users are Pending Editors until Owner approval', async ({ page, contex
 test('actual Owner role controls release affordances with no role dropdown', async ({ page }) => {
   await signIn(page);
   await page.getByRole('button', { name: 'Releases' }).click();
-  await expect(page.getByRole('button', { name: 'Publish to Staging' })).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'Promote Staging to Production' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Publish to Staging' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Promote Staging to Production' })).toBeVisible();
   await expect(page.getByLabel('Foundation role')).toHaveCount(0);
   await page.getByRole('button', { name: 'Tablet preview' }).click();
   await expect(page.getByTestId('app-preview')).toHaveAttribute('data-device', 'tablet');

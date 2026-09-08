@@ -1,7 +1,12 @@
 import { Hono } from 'hono';
-import { ProblemError, problemResponse } from './problems';
+import { ProblemError, problemResponse, toProblemError } from './problems';
 import { createAuthDependencies, createAuthRoutes, type AuthDependencies } from './routes/auth';
 import { createMembershipRoutes } from './routes/memberships';
+import { createDraftRoutes } from './routes/drafts';
+import { createMediaRoutes } from './routes/media';
+import { createReleaseRoutes } from './routes/releases';
+import { createPublicContentRoutes } from './routes/public-content';
+import { createOperationsRoutes } from './routes/operations';
 import { applySecurityHeaders } from './security';
 
 export interface ApiEnvironment {
@@ -17,6 +22,9 @@ export interface ApiEnvironment {
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   SESSION_SECRET?: string;
+  SIGNING_KEY_ID?: string;
+  RELEASE_SIGNING_PRIVATE_JWK?: string;
+  RELEASE_SIGNING_PUBLIC_JWK?: string;
 }
 
 export type ApiVariables = { requestId: string };
@@ -73,6 +81,11 @@ export function createServerApp(environment: ApiEnvironment, providedAuth?: Auth
 
   app.route('/', createAuthRoutes(environment, auth));
   app.route('/', createMembershipRoutes(environment, auth));
+  app.route('/', createDraftRoutes(environment, auth));
+  app.route('/', createMediaRoutes(environment, auth));
+  app.route('/', createReleaseRoutes(environment, auth));
+  app.route('/', createPublicContentRoutes(environment));
+  app.route('/', createOperationsRoutes(environment, auth));
 
   app.notFound(() => {
     throw new ProblemError(404, 'NOT_FOUND', 'The requested operation does not exist');
@@ -80,7 +93,7 @@ export function createServerApp(environment: ApiEnvironment, providedAuth?: Auth
 
   app.onError((error, context) => {
     const requestId = context.get('requestId') || crypto.randomUUID();
-    if (!(error instanceof ProblemError)) {
+    if (toProblemError(error).status === 500) {
       console.error(JSON.stringify({ event: 'unexpected_request_error', requestId }));
     }
     const response = applySecurityHeaders(problemResponse(error, requestId));

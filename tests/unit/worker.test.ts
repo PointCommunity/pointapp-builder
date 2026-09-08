@@ -12,10 +12,10 @@ function environment(databaseResult: 'reachable' | 'unavailable' = 'reachable'):
       fetch: async () => new Response('<!doctype html><title>PointApp Builder</title>'),
     },
     DB: {
-      prepare: () => ({
+      prepare: (query: string) => ({
         first: async () => {
           if (databaseResult === 'unavailable') throw new Error('D1 unavailable');
-          return { ok: 1 };
+          return query.includes('SELECT 1 AS ok') ? { ok: 1 } : null;
         },
       }),
     } as unknown as D1Database,
@@ -57,9 +57,9 @@ describe('PointApp Builder Worker boundary', () => {
   });
 
   it.each([
-    ['/api/drafts', 404, 'NOT_FOUND'],
+    ['/api/drafts', 401, 'UNAUTHENTICATED'],
     ['/auth/login', 503, 'AUTH_UNAVAILABLE'],
-    ['/content/v1/channels/production', 404, 'NOT_FOUND'],
+    ['/content/v1/channels/production', 404, 'PRODUCTION_NOT_PUBLISHED'],
   ])('returns a safe problem for unavailable route %s', async (path, status, code) => {
     const response = await handleRequest(
       new Request(`https://appbuilder.pointatx.org${path}`),

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ProblemError, problemResponse } from '../../../src/server/problems';
+import { z } from 'zod';
 
 describe('safe API problems', () => {
   it('serializes a typed problem with a correlation ID and field errors', async () => {
@@ -33,5 +34,15 @@ describe('safe API problems', () => {
     expect(text).toContain('INTERNAL_ERROR');
     expect(text).not.toContain('super-secret');
     expect(text).not.toContain('users.sql');
+  });
+
+  it('returns bounded field errors for schema validation failures', async () => {
+    const error = z.strictObject({ name: z.string().min(3) }).safeParse({ name: '' }).error;
+    const response = problemResponse(error, '0c5df84c-d37d-4e16-8669-a566513ee42f');
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      code: 'VALIDATION_FAILED',
+      fields: { name: expect.any(Array) },
+    });
   });
 });

@@ -17,10 +17,7 @@ function problemType(code: string): string {
 }
 
 export function problemResponse(error: unknown, requestId: string): Response {
-  const safe =
-    error instanceof ProblemError
-      ? error
-      : new ProblemError(500, 'INTERNAL_ERROR', 'The request could not be completed');
+  const safe = toProblemError(error);
 
   return Response.json(
     {
@@ -37,3 +34,17 @@ export function problemResponse(error: unknown, requestId: string): Response {
     },
   );
 }
+
+export function toProblemError(error: unknown): ProblemError {
+  if (error instanceof ProblemError) return error;
+  if (error instanceof ZodError) {
+    const fields: ProblemFields = {};
+    for (const issue of error.issues) {
+      const path = issue.path.join('.') || 'request';
+      (fields[path] ??= []).push(issue.message);
+    }
+    return new ProblemError(400, 'VALIDATION_FAILED', 'Correct the highlighted fields', fields);
+  }
+  return new ProblemError(500, 'INTERNAL_ERROR', 'The request could not be completed');
+}
+import { ZodError } from 'zod';

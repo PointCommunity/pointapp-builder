@@ -48,6 +48,14 @@ export async function digestCanonicalJson(value: unknown): Promise<string> {
   return [...digest].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+export async function digestBytes(value: ArrayBuffer | Uint8Array): Promise<string> {
+  const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+  const digest = new Uint8Array(
+    await crypto.subtle.digest('SHA-256', Uint8Array.from(bytes).buffer),
+  );
+  return [...digest].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 export function generateSigningKeyPair(): Promise<CryptoKeyPair> {
   return crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
 }

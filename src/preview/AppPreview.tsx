@@ -1,9 +1,8 @@
 import { CalendarBlank, House, PlayCircle, SquaresFour, UsersThree } from '@phosphor-icons/react';
-import type { ComponentType } from 'react';
+import { useState, type ComponentType } from 'react';
 import type { AppElement, AppManifest } from '../content/manifest';
 
 export type PreviewDevice = 'phone' | 'tablet';
-
 const icons: Record<
   AppManifest['navigation'][number]['icon'],
   ComponentType<{ size?: number; weight?: 'regular' | 'fill' }>
@@ -20,13 +19,13 @@ function Element({ element }: { element: AppElement }) {
     case 'hero':
       return (
         <section className="app-hero">
-          {element.eyebrow ? <p className="app-eyebrow">{element.eyebrow}</p> : null}
+          {element.eyebrow && <p className="app-eyebrow">{element.eyebrow}</p>}
           <h2>{element.title}</h2>
-          {element.body ? <p>{element.body}</p> : null}
-          {element.action ? <button type="button">{element.action.label}</button> : null}
+          {element.body && <p>{element.body}</p>}
+          {element.actionLabel && <button type="button">{element.actionLabel}</button>}
         </section>
       );
-    case 'text':
+    case 'rich-text':
       return <p className={`app-text app-text--${element.style}`}>{element.body}</p>;
     case 'action':
       return (
@@ -34,11 +33,35 @@ function Element({ element }: { element: AppElement }) {
           {element.label}
         </button>
       );
-    case 'media':
-      return <div className={`app-media app-media--${element.aspect}`}>{element.alt}</div>;
+    case 'image':
+      return <div className={`app-media app-media--${element.aspect}`}>Image · {element.alt}</div>;
+    case 'video':
+      return <div className="app-media">▶ {element.title}</div>;
+    case 'audio':
+      return (
+        <div className="app-audio">
+          ♪ <strong>{element.title}</strong>
+          {element.speaker && <span>{element.speaker}</span>}
+        </div>
+      );
+    case 'card-list':
+      return (
+        <section>
+          <h3>{element.title}</h3>
+          <div className="app-cards">
+            {element.cards.map((card) => (
+              <article key={card.id}>
+                <strong>{card.title}</strong>
+                <p>{card.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      );
     case 'event-list':
       return (
         <section className="event-list">
+          <h3>{element.title}</h3>
           <div>
             <time>SEP 14</time>
             <span>Point Welcome Lunch</span>
@@ -49,45 +72,103 @@ function Element({ element }: { element: AppElement }) {
           </div>
         </section>
       );
+    case 'scripture':
+      return (
+        <blockquote>
+          <p>{element.text}</p>
+          <cite>
+            {element.reference} · {element.translation}
+          </cite>
+        </blockquote>
+      );
     case 'divider':
       return <hr />;
+    case 'spacer':
+      return <div className={`app-spacer app-spacer--${element.size}`} />;
+    case 'embed-link':
+      return (
+        <section className="app-embed">
+          <strong>{element.title}</strong>
+          <small>{element.url}</small>
+        </section>
+      );
   }
 }
 
-export function AppPreview({ device, manifest }: { device: PreviewDevice; manifest: AppManifest }) {
-  const screen = manifest.screens.find((item) => item.id === manifest.navigation[0].screenId);
-
+export function AppPreview({
+  device,
+  manifest,
+  audienceId = null,
+}: {
+  device: PreviewDevice;
+  manifest: AppManifest;
+  audienceId?: string | null;
+}) {
+  const visibleScreens = manifest.screens.filter(
+    (screen) =>
+      screen.visible &&
+      (screen.audienceIds.length === 0 ||
+        Boolean(audienceId && screen.audienceIds.includes(audienceId))),
+  );
+  const firstScreenId =
+    manifest.navigation.find((item) => visibleScreens.some((screen) => screen.id === item.screenId))
+      ?.screenId ?? visibleScreens[0]?.id;
+  const [screenId, setScreenId] = useState(firstScreenId);
+  const screen = visibleScreens.find((item) => item.id === screenId) ?? visibleScreens[0];
   return (
     <div className="device-shell" data-device={device} data-testid="app-preview">
       <div className="device-camera" aria-hidden="true" />
       <div
         className="mobile-app"
-        style={{ '--app-accent': manifest.brand.accent } as React.CSSProperties}
+        style={
+          {
+            '--app-accent': manifest.theme.accent,
+            '--app-background': manifest.theme.background,
+            '--app-surface': manifest.theme.surface,
+            '--app-text': manifest.theme.text,
+          } as React.CSSProperties
+        }
       >
         <header className="mobile-header">
           <span className="mobile-mark" aria-hidden="true">
             P
           </span>
-          <strong>{manifest.brand.shortName}</strong>
+          <strong>{manifest.app.shortName}</strong>
           <span className="mobile-avatar" aria-hidden="true">
             C
           </span>
         </header>
         <div className="mobile-content">
-          {screen?.elements.map((element) => (
-            <Element element={element} key={element.id} />
-          ))}
+          {screen ? (
+            screen.elements
+              .filter(
+                (element) =>
+                  element.audienceIds.length === 0 ||
+                  Boolean(audienceId && element.audienceIds.includes(audienceId)),
+              )
+              .map((element) => <Element element={element} key={element.id} />)
+          ) : (
+            <p>No visible screen for this audience.</p>
+          )}
         </div>
         <nav className="mobile-tabs" aria-label="PointApp tabs">
-          {manifest.navigation.map((item, index) => {
-            const Icon = icons[item.icon];
-            return (
-              <button className={index === 0 ? 'is-active' : ''} key={item.id} type="button">
-                <Icon size={20} weight={index === 0 ? 'fill' : 'regular'} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+          {manifest.navigation
+            .filter((item) => visibleScreens.some((screenItem) => screenItem.id === item.screenId))
+            .map((item) => {
+              const Icon = icons[item.icon];
+              const active = item.screenId === screen?.id;
+              return (
+                <button
+                  className={active ? 'is-active' : ''}
+                  key={item.id}
+                  onClick={() => setScreenId(item.screenId)}
+                  type="button"
+                >
+                  <Icon size={20} weight={active ? 'fill' : 'regular'} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
         </nav>
       </div>
     </div>

@@ -28,7 +28,7 @@ export function SessionGate({
   if (session.state === 'active' && session.membership) return children;
 
   const gateState = session.state === 'active' ? 'unavailable' : session.state;
-  const content = {
+  const contentByState = {
     'signed-out': {
       title: 'Build the PointApp with your team.',
       body: 'Sign in with GitHub. New accounts begin as Pending Editors until an Owner approves access.',
@@ -45,7 +45,8 @@ export function SessionGate({
       title: 'Sign-in is temporarily unavailable',
       body: 'The Builder is not fully configured. No protected content has been loaded.',
     },
-  }[gateState];
+  };
+  const content = contentByState[gateState] ?? contentByState.unavailable;
 
   return (
     <main className="access-gate">

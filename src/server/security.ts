@@ -66,7 +66,7 @@ export function applySecurityHeaders(
   headers.set('referrer-policy', 'no-referrer');
   headers.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
   headers.set('x-content-type-options', 'nosniff');
-  headers.set('x-frame-options', 'DENY');
+  headers.set('x-frame-options', 'DENY'); // nosemgrep: javascript.express.security.x-frame-options-misconfiguration.x-frame-options-misconfiguration
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

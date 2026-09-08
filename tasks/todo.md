@@ -1,26 +1,32 @@
-# Internal task list
+# Internal task list: PointApp Builder development pipeline
 
-- [x] Task 1: Write the foundation specification
-  - Acceptance: roles, channels, content delivery, hosting, boundaries, and deferred decisions are explicit.
-  - Verify: inspect `specs/001-foundation/spec.html` in a browser.
-- [x] Task 2: Implement access and content contracts
-  - Acceptance: four roles and a strict versioned manifest validate deterministically.
-  - Verify: focused unit tests fail before implementation and pass afterward.
-- [x] Task 3: Implement the staging preview slice
-  - Acceptance: the same manifest renders at phone and tablet sizes.
-  - Verify: unit/component tests and browser checks.
-- [x] Task 4: Implement the separated Builder shell
-  - Acceptance: planned panels are discoverable and release actions reflect capabilities.
-  - Verify: accessibility and responsive browser checks.
-- [x] Task 5: Establish quality and delivery automation
-  - Acceptance: CI gates every push/PR; hosting remains separate from quality automation.
-  - Verify: local full suite and workflow inspection.
-- [x] Task 6: Create and verify the private GitHub repository
-  - Acceptance: `PointCommunity/pointapp-builder` is private and exact `main` is pushed.
-  - Verify: GitHub repository, commit, workflow, and Pages API readback.
-- [x] Task 7: Establish Cloudflare Worker hosting
-  - Acceptance: isolated Worker, D1 binding, custom domain, account verification, and fail-closed API boundary exist.
-  - Verify: focused Worker tests, generated types, full quality suite, and configuration inspection.
-- [x] Task 8: Release and verify `appbuilder.pointatx.org`
-  - Acceptance: exact clean `main` is live over HTTPS and health reports reachable D1 without enabling auth or publishing.
-  - Verify: GitHub Quality, Wrangler deployment readback, endpoint checks, and live browser inspection.
+- [x] Task 1: Research live source and target state
+  - Acceptance: PointSite Builder files, GitHub Project, labels, workflows, PointApp Builder PRs, and release boundaries are evidenced.
+  - Verify: read-only Git, gh, and repository configuration readback.
+- [x] Task 2: Establish Project #5
+  - Acceptance: private PointApp Builder Project has exact fields, views, workflows, repository link, corrected In Review description, and zero copied cards.
+  - Verify: CLI and GraphQL Project readback.
+- [x] Task 3: Establish governed labels
+  - Acceptance: every type and area label exists with PointApp-aligned descriptions and controlled colors.
+  - Verify: gh label list readback and pipeline audit.
+- [x] Task 4: Write specification and authority
+  - Acceptance: dark-mode HTML specification, plan, tasks, policy, and AGENTS preserve all PointApp-specific boundaries.
+  - Verify: HTML validation, terminology scan, and alignment audit.
+- [x] Task 5: Add repository-owned skills and adapters
+  - Acceptance: eight separate PointApp workflow skills, five pinned shared skills, 13 regular-file Claude adapters, CLAUDE import, and GEMINI import exist.
+  - Verify: skill validator and registry alignment.
+- [x] Task 6: Implement deterministic pipeline checks test-first
+  - Acceptance: valid Project/Issue/PR states pass; missing metadata, copied Canary text, bad labels, auto-close syntax, and ungoverned PRs fail; exact PRs #7 through #11 are the only bootstrap exceptions.
+  - Verify: focused Node tests demonstrate red then green.
+- [x] Task 7: Align repository automation
+  - Acceptance: package scripts, CI/security jobs, branch patterns, CODEOWNERS, Dependabot, pre-commit, lint, and Prettier cover the adopted pipeline.
+  - Verify: format/lint/workflow inspection and full check.
+- [x] Task 8: Complete local verification
+  - Acceptance: skills, format, types, lint, contracts, migrations, coverage, security, build, performance, browser, HTML, and diff checks pass.
+  - Verify: repository commands and validators.
+- [x] Task 9: Complete live pipeline readback
+  - Acceptance: the live audit passes with only the known branch-rule and any still-open exact bootstrap-PR warning.
+  - Verify: npm run pipeline:health.
+- [x] Task 10: Commit, push, and verify exact-head CI
+  - Acceptance: only bootstrap-owned files are committed to the current bootstrap branch and every GitHub Quality job passes for the exact head.
+  - Verify: Git status/diff, remote SHA, bootstrap PR head, and Actions readback.

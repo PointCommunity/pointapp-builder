@@ -326,9 +326,12 @@ export class GitHubApiGateway implements GitHubIdentityGateway {
   }
 
   async exchangeCode(code: string, codeVerifier: string): Promise<GitHubIdentity> {
+    // Cloudflare's native fetch rejects a non-global receiver. Copy it before invoking so
+    // storing the function on this gateway cannot turn the call into a class method call.
+    const fetcher = this.fetcher;
     let tokenResponse: Response;
     try {
-      tokenResponse = await this.fetcher('https://github.com/login/oauth/access_token', {
+      tokenResponse = await fetcher('https://github.com/login/oauth/access_token', {
         method: 'POST',
         headers: { accept: 'application/json', 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -361,7 +364,7 @@ export class GitHubApiGateway implements GitHubIdentityGateway {
 
     let userResponse: Response;
     try {
-      userResponse = await this.fetcher('https://api.github.com/user', {
+      userResponse = await fetcher('https://api.github.com/user', {
         headers: {
           accept: 'application/vnd.github+json',
           authorization: `Bearer ${tokenResult.data.access_token}`,

@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PointApp Builder — Implementation Plan</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090d13;
+        --panel: #121a27;
+        --line: #2a3548;
+        --text: #eef4ff;
+        --muted: #a9b5c8;
+        --cyan: #67e8f9;
+        --green: #86efac;
+        --amber: #fde68a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(160deg, #121c2d, #090d13 44%);
+        color: var(--text);
+        font:
+          16px/1.58 Inter,
+          ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1180px;
+        margin: auto;
+        padding: 52px 24px 100px;
+      }
+      h1 {
+        font-size: clamp(2.4rem, 6vw, 4.8rem);
+        line-height: 0.98;
+        margin: 0.3em 0;
+      }
+      h2 {
+        margin-top: 3rem;
+        color: var(--cyan);
+      }
+      h3 {
+        color: var(--green);
+      }
+      .eyebrow {
+        color: var(--green);
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .lede {
+        max-width: 800px;
+        color: var(--muted);
+        font-size: 1.15rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 18px;
+      }
+      .card,
+      .phase {
+        background: linear-gradient(145deg, #162132, #101722);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 22px;
+      }
+      .phase {
+        margin: 14px 0;
+        display: grid;
+        grid-template-columns: 90px 1fr;
+        gap: 18px;
+      }
+      .num {
+        font: 800 2rem/1 ui-monospace;
+        color: var(--cyan);
+      }
+      code {
+        color: #bae6fd;
+      }
+      .muted,
+      li {
+        color: var(--muted);
+      }
+      strong {
+        color: var(--text);
+      }
+      .pass {
+        color: var(--green);
+      }
+      @media (max-width: 600px) {
+        .phase {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Implementation plan · codex/003-complete-builder</p>
+      <h1>From prototype to production control plane.</h1>
+      <p class="lede">
+        A single Cloudflare Worker serves the authenticated Builder and the signed public PointApp
+        content channel. The plan advances in independently verifiable vertical slices, with access
+        and release invariants established before broad UI work.
+      </p>
+      <h2>Technical baseline</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Runtime</h3>
+          <p class="muted">
+            Node.js 22+, TypeScript 5.9 strict mode, React 19, Vite 8, Hono, Zod, Cloudflare Worker
+            Static Assets.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Persistence</h3>
+          <p class="muted">
+            Cloudflare D1 with forward-only migrations, immutable revisions, transactional pointer
+            changes, idempotency records, audit events, and chunked images.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Verification</h3>
+          <p class="muted">
+            Vitest/Miniflare, Testing Library, Redocly, Playwright, axe-core, deterministic load
+            checks, dependency audit, production build, CI, and live checks.
+          </p>
+        </section>
+      </div>
+      <h2>Execution sequence</h2>
+      <section class="phase">
+        <div class="num">01</div>
+        <div>
+          <h3>Secure foundation</h3>
+          <p class="muted">
+            Add D1 migrations, Hono composition, typed errors, correlation IDs, security headers,
+            request bounds, CSRF/origin enforcement, idempotency, and rate limiting. Contract and
+            migration tests lead implementation.
+          </p>
+        </div>
+      </section>
+      <section class="phase">
+        <div class="num">02</div>
+        <div>
+          <h3>Identity and governance</h3>
+          <p class="muted">
+            Implement GitHub App OAuth with state and PKCE, signed <code>__Host-</code> cookies,
+            fixed Owner bootstrap, Pending Editor registration, immediate role/status lookup, full
+            access matrix, last-Owner protection, and audit logging.
+          </p>
+        </div>
+      </section>
+      <section class="phase">
+        <div class="num">03</div>
+        <div>
+          <h3>Authoring core</h3>
+          <p class="muted">
+            Implement draft/revision repositories with optimistic concurrency, schema validation,
+            duplicate/archive/recover operations, and API client state. Build screen, element,
+            navigation, branding, audience, notification, and settings editors against the same
+            manifest.
+          </p>
+        </div>
+      </section>
+      <section class="phase">
+        <div class="num">04</div>
+        <div>
+          <h3>Media and preview</h3>
+          <p class="muted">
+            Add bounded accessible image upload, external audio/video metadata, private/public
+            reachability rules, phone/tablet responsive previews, navigation interaction, and
+            audience simulation.
+          </p>
+        </div>
+      </section>
+      <section class="phase">
+        <div class="num">05</div>
+        <div>
+          <h3>Immutable release system</h3>
+          <p class="muted">
+            Canonicalize and hash manifests; validate releases; sign with Ed25519; publish exact
+            saved revisions to PointApp Staging; promote the same digest to Production; expose
+            ETag-aware public content/key/media routes; add history and reasoned rollback.
+          </p>
+        </div>
+      </section>
+      <section class="phase">
+        <div class="num">06</div>
+        <div>
+          <h3>Operations and complete UI</h3>
+          <p class="muted">
+            Replace every placeholder and simulated control. Deliver real Access, Releases,
+            Audit/health/capacity, Content, Library, Navigation, Branding, Audience, Notifications,
+            and Settings panels with accessible loading/error/empty states.
+          </p>
+        </div>
+      </section>
+      <section class="phase">
+        <div class="num">07</div>
+        <div>
+          <h3>Adversarial verification</h3>
+          <p class="muted">
+            Execute the role matrix, stale-write tests, malformed media/manifest tests,
+            replay/idempotency tests, signature/digest invariants, route privacy checks, performance
+            load profile, responsive browser matrix, keyboard and automated accessibility checks.
+          </p>
+        </div>
+      </section>
+      <section class="phase">
+        <div class="num">08</div>
+        <div>
+          <h3>Organization integration and production</h3>
+          <p class="muted">
+            Add the exact PointApp callback to the existing GitHub App, expand only its repository
+            selection to all organization repositories, install Builder-specific secrets, migrate
+            D1, merge the reviewed branch, require green CI for the exact <code>main</code> commit,
+            deploy directly to Builder Production, and verify live.
+          </p>
+        </div>
+      </section>
+      <h2>Architecture boundaries</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Client</h3>
+          <p class="muted">
+            No authority or durable truth. It renders current server capabilities and submits
+            expected revision IDs.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Worker API</h3>
+          <p class="muted">
+            Owns authentication, authorization, validation, orchestration, signatures, public
+            delivery, and audit correlation.
+          </p>
+        </section>
+        <section class="card">
+          <h3>D1</h3>
+          <p class="muted">
+            Owns membership state, immutable content/release records, mutable channel pointers,
+            idempotency, and audit evidence.
+          </p>
+        </section>
+        <section class="card">
+          <h3>PointApp</h3>
+          <p class="muted">
+            Separate native consumer. It will verify signatures and atomically activate compatible
+            data; it is not modified here.
+          </p>
+        </section>
+      </div>
+      <h2>Governance gates</h2>
+      <p class="pass"><strong>All constitution gates pass.</strong></p>
+      <ul>
+        <li>
+          Server authority and stable bootstrap identity are mandatory before protected features.
+        </li>
+        <li>No promotion path may alter the verified Staging manifest digest.</li>
+        <li>No Builder pre-production environment will be created.</li>
+        <li>No remote deployment occurs from an uncommitted or failing tree.</li>
+        <li>Human testing begins only after automated and agent-operated gates are fully green.</li>
+      </ul>
+      <h2>Explicit dependency on the Owner</h2>
+      <p class="muted">
+        The registration-boundary assumption remains open for confirmation: all valid GitHub users
+        may request access as Pending Editors. It does not block safe implementation because Pending
+        users receive no protected data. Final human validation will also require the Owner to
+        exercise real editorial judgment on representative phone/tablet content.
+      </p>
+    </main>
+  </body>
+</html>

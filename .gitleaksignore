@@ -1,0 +1,4 @@
+# Deterministic UUID-only idempotency test fixtures; no credentials.
+55eaab86ae2c4704f6860d6b4d4d9eb764cd6dc4:tests/unit/server/request-security.test.ts:generic-api-key:18
+55eaab86ae2c4704f6860d6b4d4d9eb764cd6dc4:tests/integration/idempotency-audit.test.ts:generic-api-key:25
+55eaab86ae2c4704f6860d6b4d4d9eb764cd6dc4:tests/integration/idempotency-audit.test.ts:generic-api-key:44

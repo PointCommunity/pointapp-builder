@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PointApp Builder — Architecture Research</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0d12;
+        --panel: #121824;
+        --line: #293246;
+        --text: #eef2f8;
+        --muted: #a9b4c7;
+        --accent: #7dd3fc;
+        --good: #86efac;
+        --warn: #fcd34d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top, #152033 0, #0a0d12 42%);
+        color: var(--text);
+        font:
+          16px/1.62 Inter,
+          ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1120px;
+        margin: auto;
+        padding: 56px 24px 96px;
+      }
+      h1 {
+        font-size: clamp(2.2rem, 6vw, 4.5rem);
+        line-height: 1;
+        margin: 0.25em 0;
+      }
+      h2 {
+        margin-top: 2.4rem;
+        color: var(--accent);
+      }
+      h3 {
+        margin-bottom: 0.2rem;
+      }
+      .eyebrow {
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--good);
+        font-weight: 800;
+      }
+      .lede {
+        max-width: 760px;
+        color: var(--muted);
+        font-size: 1.15rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 18px;
+      }
+      .card {
+        background: linear-gradient(145deg, #151d2b, #101620);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 22px;
+      }
+      dt {
+        font-weight: 800;
+        color: var(--good);
+      }
+      dd {
+        margin: 0 0 1rem;
+        color: var(--muted);
+      }
+      code {
+        color: #bae6fd;
+      }
+      a {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Phase 0 · Research · 7 September 2026</p>
+      <h1>Decisions before implementation.</h1>
+      <p class="lede">
+        The Builder is a private control plane; the PointApp content feed is a public, signed,
+        read-only data plane. The design deliberately separates those trust boundaries.
+      </p>
+      <h2>Platform and delivery</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Worker-first API routing</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Run the Worker first for authentication, API, media, health, and content-channel
+              routes while leaving fingerprinted static assets on the asset path.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              Cloudflare Workers Static Assets supports selective Worker-first routes and SPA
+              fallback without exposing protected records through the public bundle.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              GitHub Pages cannot safely host authenticated mutations for a private repository on
+              the organization’s current plan; a separate API would add deployment coupling.
+            </dd>
+          </dl>
+        </section>
+        <section class="card">
+          <h3>D1 transactional persistence</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Use prepared statements and D1 batches for membership transitions, immutable saves,
+              publication pointers, and audit records.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              D1 batches execute sequentially as a transaction and roll back the sequence on
+              failure. Database constraints remain the source of truth.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              Browser storage is not authoritative or shareable. Repository commits would make
+              routine app-content publication slow and would require broader GitHub permissions.
+            </dd>
+          </dl>
+        </section>
+        <section class="card">
+          <h3>Rate limiting</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Use Cloudflare Rate Limiting bindings keyed by authenticated actor and operation, with
+              narrow IP-based limits only for unauthenticated login/callback abuse.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              The binding is fast, but is local and eventually consistent; it is suitable for abuse
+              resistance, never authorization or exact quotas.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              In-isolate maps are unreliable across isolates. A D1-only counter would add contention
+              to every mutation.
+            </dd>
+          </dl>
+        </section>
+      </div>
+      <h2>Identity and authority</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Existing GitHub App</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Reuse the organization-owned <code>pointsite-builder</code> GitHub App for user OAuth
+              with a new exact callback URL and configure its installation for all organization
+              repositories without adding permissions.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              One organization integration matches the user’s request. OAuth identity and
+              installation repository access remain distinct. PointApp content itself stays in D1.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              A second app fragments management; Cloudflare Access would not provide the requested
+              first-login/pending-user workflow.
+            </dd>
+          </dl>
+        </section>
+        <section class="card">
+          <h3>Owner bootstrap</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Only immutable GitHub user ID <code>1202831</code> may atomically become Owner in an
+              empty installation. Every other new identity is inserted as Pending Editor.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              This prevents an arbitrary internet visitor from winning a first-request race and
+              avoids trusting a mutable login name.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              “First visitor wins” is unsafe. Environment-only role lists do not support ongoing
+              Owner administration.
+            </dd>
+          </dl>
+        </section>
+        <section class="card">
+          <h3>Registration boundary</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Assume any valid GitHub identity may create a Pending Editor request; pending users
+              receive no protected data. This remains a reviewable assumption until the Owner
+              confirms whether registration should instead require organization membership.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              It supports volunteers while retaining explicit Owner approval and avoids increasing
+              GitHub App permissions.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              Organization-members-only signup reduces request noise but requires an
+              organization-membership check and may exclude legitimate non-member contributors.
+            </dd>
+          </dl>
+        </section>
+      </div>
+      <h2>Content integrity</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Canonical manifests</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Recursively sort JSON object keys, serialize deterministically, hash with SHA-256, and
+              sign the digest-bearing release envelope with Ed25519.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              Cloudflare Web Crypto supports Ed25519. Identical manifest bytes produce an identical
+              digest independent of channel.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              Signing ordinary <code>JSON.stringify</code> output risks key-order differences. HMAC
+              would require distributing a shared secret to apps.
+            </dd>
+          </dl>
+        </section>
+        <section class="card">
+          <h3>Exact promotion</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              The manifest contains no channel. Staging and Production pointers reference immutable
+              signed releases; promotion reuses the Staging manifest digest and payload and creates
+              only a Production channel event.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              This proves that Production is the verified Staging candidate rather than a rebuild.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              Embedding the channel in the manifest would force a byte change during promotion.
+            </dd>
+          </dl>
+        </section>
+        <section class="card">
+          <h3>Media</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Store bounded image bytes in D1 chunks and store external HTTPS metadata for
+              audio/video. Public media is authorized by reachability from the active Production
+              manifest.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              Images need same-origin durability; large streaming media does not belong in D1.
+              Reachability prevents draft leakage.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              Public-by-ID media leaks abandoned drafts. Large binary D1 storage is inefficient.
+            </dd>
+          </dl>
+        </section>
+      </div>
+      <h2>Application shape</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Single TypeScript package</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Retain React, Vite, TypeScript, and the existing Worker entrypoint; add Hono for
+              explicit routing and middleware plus layered domain/repository/service modules.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              This preserves the working foundation and keeps client/server contracts in one strict
+              TypeScript project.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              A monorepo or framework rewrite adds risk without improving this single-product
+              deployment.
+            </dd>
+          </dl>
+        </section>
+        <section class="card">
+          <h3>Notification scope</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Author and sign notification campaigns as PointApp content. Do not claim native push
+              delivery until the separate app and APNs/FCM provider exist.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              The Builder can own the content contract without pretending to own unavailable native
+              infrastructure.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              Embedding provider credentials now creates unused secret and operational surface.
+            </dd>
+          </dl>
+        </section>
+        <section class="card">
+          <h3>Quality gates</h3>
+          <dl>
+            <dt>Decision</dt>
+            <dd>
+              Require format, generated bindings, strict types, lint, OpenAPI lint, migration
+              rehearsal, unit/integration coverage, dependency audit, production build, performance
+              checks, Playwright responsiveness/accessibility, and live verification.
+            </dd>
+            <dt>Rationale</dt>
+            <dd>
+              Authentication and exact release promotion are high-impact; each invariant needs
+              executable evidence.
+            </dd>
+            <dt>Alternatives</dt>
+            <dd>
+              A single happy-path browser test cannot validate server-side access or immutable
+              promotion.
+            </dd>
+          </dl>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

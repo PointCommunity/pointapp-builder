@@ -184,15 +184,15 @@
           <h3>Builder API</h3>
           <p>
             Authenticates collaborators, enforces roles, stores revisions, coordinates releases,
-            audits mutations, and signs approved envelopes.
+            audits successful and rejected mutations, and signs approved envelopes.
           </p>
         </section>
         <section class="card">
           <h3>Content delivery</h3>
           <p>
-            Serves immutable Staging and Production envelopes over HTTPS with cache controls and
-            rollback-safe identifiers. Promotion atomically advances the Production pointer and
-            emits a refresh hint without rebuilding the approved envelope.
+            Serves the current signed Staging envelope to authenticated previews and the immutable
+            Production envelope publicly over HTTPS with ETags. Promotion atomically advances the
+            Production pointer without rebuilding the approved envelope.
           </p>
         </section>
         <section class="card">
@@ -210,8 +210,9 @@
         The Builder preserves the same ordered roles: Editor, Publisher, Administrator, and Owner.
         Editors author drafts, Publishers may publish an exact revision to Staging, and only
         Administrators or Owners may promote that unchanged verified revision to Production. Every
-        mutation and promotion is enforced and audited by the future API, never trusted to browser
-        controls.
+        mutation and promotion is enforced and audited by the Worker API, never trusted to browser
+        controls. Only GitHub ID <code>1202831</code> can bootstrap ownership; all other new users
+        enter a pending Editor queue until approved.
       </p>
 
       <h2>Why data-only updates</h2>
@@ -225,11 +226,12 @@
       <h2>Hosting boundary</h2>
       <section class="card warning">
         <p>
-          <code>appbuilder.pointatx.org</code> is hosted by a dedicated Cloudflare Worker with an
-          isolated D1 binding. The current public shell is deliberately disconnected: unknown API
-          and authentication routes fail closed, and no browser-selected role grants authority.
-          Authentication, persistence, signing, and release delivery require separate
-          implementation.
+          <code>appbuilder.pointatx.org</code> is hosted directly in one Production Cloudflare
+          Worker with an isolated D1 binding. GitHub Pages is not used because a static host cannot
+          enforce authenticated mutations, retain private drafts, or hold signing credentials. The
+          Worker refuses incomplete Production configuration, routes protected operations before
+          static assets, and exposes anonymously only health, login, the signed Production channel,
+          its referenced media, and compiled assets.
         </p>
       </section>
 

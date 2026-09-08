@@ -1,0 +1,1111 @@
+openapi: 3.1.0
+info:
+  title: PointApp Builder API
+  version: 1.0.0
+  license:
+    name: Private and proprietary
+    identifier: LicenseRef-Proprietary
+  description: >-
+    Authenticated Builder control-plane and public signed PointApp content-plane contract.
+    Browser UI visibility never grants authority; every protected operation is authorized server-side.
+servers:
+  - url: https://appbuilder.pointatx.org
+    description: Production
+tags:
+  - name: System
+    description: Safe service health.
+  - name: Authentication
+    description: GitHub App OAuth and session lifecycle.
+  - name: Access
+    description: Pending approval and role governance.
+  - name: Drafts
+    description: Draft metadata and immutable manifest revisions.
+  - name: Media
+    description: Private media library management.
+  - name: Releases
+    description: Validation, Staging, Production, history, and rollback.
+  - name: Operations
+    description: Owner audit, health, and capacity views.
+  - name: Public content
+    description: Anonymous signed Production content data plane.
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      summary: Read safe service health
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Safe dependency health without secret values.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+  /auth/login:
+    get:
+      tags: [Authentication]
+      summary: Begin GitHub App login
+      operationId: beginLogin
+      security: []
+      parameters:
+        - in: query
+          name: returnTo
+          schema: { type: string, maxLength: 256, pattern: '^/[A-Za-z0-9/_?=&.-]*$' }
+      responses:
+        '302': { description: Redirect to GitHub App OAuth authorization. }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/callback:
+    get:
+      tags: [Authentication]
+      summary: Complete GitHub App login
+      operationId: completeLogin
+      security: []
+      parameters:
+        - {
+            in: query,
+            name: code,
+            required: true,
+            schema: { type: string, minLength: 1, maxLength: 512 },
+          }
+        - {
+            in: query,
+            name: state,
+            required: true,
+            schema: { type: string, minLength: 32, maxLength: 512 },
+          }
+      responses:
+        '302': { description: Establish signed session and redirect to a local Builder path. }
+        '400': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: End the current session
+      operationId: logout
+      security: [{ sessionCookie: [] }]
+      responses:
+        '204': { description: Session cleared. }
+        '403': { $ref: '#/components/responses/Problem' }
+  /api/session:
+    get:
+      tags: [Authentication]
+      summary: Read current session state
+      operationId: getSession
+      security: []
+      responses:
+        '200':
+          description: Current signed-out, pending, disabled, or active session state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionView' }
+  /api/memberships:
+    get:
+      tags: [Access]
+      summary: List manageable memberships
+      operationId: listMemberships
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+        - in: query
+          name: status
+          schema: { $ref: '#/components/schemas/MembershipStatus' }
+      responses:
+        '200':
+          description: Membership page. Administrator results exclude Owners and Administrators they cannot manage.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/Membership' } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /api/memberships/{githubUserId}:
+    patch:
+      tags: [Access]
+      summary: Approve or change a membership
+      operationId: updateMembership
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/GitHubUserId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedVersion]
+              additionalProperties: false
+              properties:
+                expectedVersion: { type: integer, minimum: 1 }
+                role: { $ref: '#/components/schemas/Role' }
+                status: { $ref: '#/components/schemas/MembershipStatus' }
+                reason: { type: string, minLength: 3, maxLength: 240 }
+      responses:
+        '200':
+          description: Updated membership.
+          content: { application/json: { schema: { $ref: '#/components/schemas/Membership' } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /api/drafts:
+    get:
+      tags: [Drafts]
+      summary: List drafts
+      operationId: listDrafts
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+        - in: query
+          name: state
+          schema: { type: string, enum: [active, all], default: active }
+      responses:
+        '200':
+          description: Draft summaries.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      {
+                        items:
+                          { type: array, items: { $ref: '#/components/schemas/DraftSummary' } },
+                      }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Drafts]
+      summary: Create or duplicate a draft
+      operationId: createDraft
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+                duplicateRevisionId: { $ref: '#/components/schemas/Id' }
+      responses:
+        '201':
+          description: Draft and initial revision.
+          content: { application/json: { schema: { $ref: '#/components/schemas/DraftDetail' } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /api/drafts/{draftId}:
+    get:
+      tags: [Drafts]
+      summary: Read a draft and current manifest
+      operationId: getDraft
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/DraftId' }]
+      responses:
+        '200':
+          {
+            description: Draft with current manifest.,
+            content: { application/json: { schema: { $ref: '#/components/schemas/DraftDetail' } } },
+          }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Drafts]
+      summary: Rename archive or recover a draft
+      operationId: updateDraft
+      security: [{ sessionCookie: [] }]
+      parameters:
+        [
+          { $ref: '#/components/parameters/DraftId' },
+          { $ref: '#/components/parameters/IdempotencyKey' },
+        ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedVersion]
+              additionalProperties: false
+              properties:
+                expectedVersion: { type: integer, minimum: 1 }
+                name: { type: string, minLength: 1, maxLength: 80 }
+                state: { type: string, enum: [active, archived] }
+      responses:
+        '200':
+          {
+            description: Updated draft.,
+            content:
+              { application/json: { schema: { $ref: '#/components/schemas/DraftSummary' } } },
+          }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /api/drafts/{draftId}/revisions:
+    get:
+      tags: [Drafts]
+      summary: List immutable revisions
+      operationId: listRevisions
+      security: [{ sessionCookie: [] }]
+      parameters:
+        [
+          { $ref: '#/components/parameters/DraftId' },
+          { $ref: '#/components/parameters/Cursor' },
+          { $ref: '#/components/parameters/Limit' },
+        ]
+      responses:
+        '200':
+          description: Immutable revision descriptors.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      {
+                        items:
+                          { type: array, items: { $ref: '#/components/schemas/RevisionSummary' } },
+                      }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Drafts]
+      summary: Save an immutable revision
+      operationId: saveRevision
+      security: [{ sessionCookie: [] }]
+      parameters:
+        [
+          { $ref: '#/components/parameters/DraftId' },
+          { $ref: '#/components/parameters/IdempotencyKey' },
+        ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedParentRevisionId, label, manifest]
+              additionalProperties: false
+              properties:
+                expectedParentRevisionId: { $ref: '#/components/schemas/Id' }
+                label: { type: string, minLength: 1, maxLength: 120 }
+                manifest: { $ref: '#/components/schemas/Manifest' }
+      responses:
+        '201':
+          {
+            description: Immutable saved revision.,
+            content:
+              { application/json: { schema: { $ref: '#/components/schemas/RevisionSummary' } } },
+          }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /api/media:
+    get:
+      tags: [Media]
+      summary: List private media assets
+      operationId: listMedia
+      security: [{ sessionCookie: [] }]
+      parameters:
+        [{ $ref: '#/components/parameters/Cursor' }, { $ref: '#/components/parameters/Limit' }]
+      responses:
+        '200':
+          description: Private media library page.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      { items: { type: array, items: { $ref: '#/components/schemas/MediaAsset' } } }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Media]
+      summary: Create a media asset
+      operationId: createMedia
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [metadata]
+              properties:
+                metadata: { $ref: '#/components/schemas/MediaInput' }
+                file: { type: string, format: binary, description: Required only for image assets. }
+      responses:
+        '201':
+          {
+            description: Ready media asset.,
+            content: { application/json: { schema: { $ref: '#/components/schemas/MediaAsset' } } },
+          }
+        '400': { $ref: '#/components/responses/Problem' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '415': { $ref: '#/components/responses/Problem' }
+  /api/media/{mediaId}:
+    get:
+      tags: [Media]
+      summary: Fetch authenticated media
+      operationId: getPrivateMedia
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/MediaId' }]
+      responses:
+        '200': { description: Image bytes or redirect/metadata response for external media. }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Media]
+      summary: Archive or recover a media asset
+      operationId: updateMediaState
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/MediaId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              additionalProperties: false
+              properties: { state: { type: string, enum: [ready, archived] } }
+      responses:
+        '200':
+          description: Updated media lifecycle state.
+          content: { application/json: { schema: { $ref: '#/components/schemas/MediaAsset' } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /api/releases/validate:
+    post:
+      tags: [Releases]
+      summary: Validate a saved revision
+      operationId: validateRevision
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revisionId]
+              additionalProperties: false
+              properties: { revisionId: { $ref: '#/components/schemas/Id' } }
+      responses:
+        '200':
+          {
+            description: Deterministic validation report.,
+            content:
+              { application/json: { schema: { $ref: '#/components/schemas/ValidationReport' } } },
+          }
+        '403': { $ref: '#/components/responses/Problem' }
+  /api/releases/staging:
+    get:
+      tags: [Releases]
+      summary: Read the exact current PointApp Staging envelope
+      operationId: getStagingRelease
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Current signed Staging envelope.
+          content:
+            { application/json: { schema: { $ref: '#/components/schemas/PublicReleaseEnvelope' } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Releases]
+      summary: Publish a revision to PointApp Staging
+      operationId: publishStaging
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revisionId]
+              additionalProperties: false
+              properties: { revisionId: { $ref: '#/components/schemas/Id' } }
+      responses:
+        '201':
+          {
+            description: Signed immutable Staging release.,
+            content: { application/json: { schema: { $ref: '#/components/schemas/ReleaseView' } } },
+          }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /api/releases/production/promotions:
+    post:
+      tags: [Releases]
+      summary: Promote current Staging to Production
+      operationId: promoteProduction
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stagingReleaseId]
+              additionalProperties: false
+              properties: { stagingReleaseId: { $ref: '#/components/schemas/Id' } }
+      responses:
+        '201':
+          {
+            description: Production points to the exact current Staging release.,
+            content: { application/json: { schema: { $ref: '#/components/schemas/ReleaseView' } } },
+          }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /api/releases/production/rollbacks:
+    post:
+      tags: [Releases]
+      summary: Roll Production back to a prior release
+      operationId: rollbackProduction
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [releaseId, reason]
+              additionalProperties: false
+              properties:
+                releaseId: { $ref: '#/components/schemas/Id' }
+                reason: { type: string, minLength: 8, maxLength: 240 }
+      responses:
+        '201':
+          {
+            description: Production points to a prior signed Production release.,
+            content: { application/json: { schema: { $ref: '#/components/schemas/ReleaseView' } } },
+          }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /api/releases:
+    get:
+      tags: [Releases]
+      summary: List release and channel history
+      operationId: listReleases
+      security: [{ sessionCookie: [] }]
+      parameters:
+        [{ $ref: '#/components/parameters/Cursor' }, { $ref: '#/components/parameters/Limit' }]
+      responses:
+        '200':
+          description: Release and channel-event history.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      {
+                        items: { type: array, items: { $ref: '#/components/schemas/ReleaseView' } },
+                      }
+        '403': { $ref: '#/components/responses/Problem' }
+  /api/audit:
+    get:
+      tags: [Operations]
+      summary: List redacted audit events
+      operationId: listAuditEvents
+      security: [{ sessionCookie: [] }]
+      parameters:
+        [{ $ref: '#/components/parameters/Cursor' }, { $ref: '#/components/parameters/Limit' }]
+      responses:
+        '200':
+          description: Owner-visible safe audit history.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      { items: { type: array, items: { $ref: '#/components/schemas/AuditEvent' } } }
+        '403': { $ref: '#/components/responses/Problem' }
+  /api/operations:
+    get:
+      tags: [Operations]
+      summary: Read system operations status
+      operationId: getOperations
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          {
+            description: 'Safe health, release, and capacity overview.',
+            content:
+              { application/json: { schema: { $ref: '#/components/schemas/OperationsView' } } },
+          }
+        '403': { $ref: '#/components/responses/Problem' }
+  /content/v1/channels/production:
+    get:
+      tags: [Public content]
+      summary: Fetch current signed Production content
+      operationId: getProductionContent
+      security: []
+      parameters:
+        - in: header
+          name: If-None-Match
+          schema: { type: string, maxLength: 160 }
+      responses:
+        '200':
+          description: Current signed Production release.
+          headers:
+            ETag: { schema: { type: string } }
+            Cache-Control: { schema: { type: string } }
+          content:
+            { application/json: { schema: { $ref: '#/components/schemas/PublicReleaseEnvelope' } } }
+        '304': { description: Client already has current Production digest. }
+        '404': { $ref: '#/components/responses/Problem' }
+  /content/v1/keys/{keyId}:
+    get:
+      tags: [Public content]
+      summary: Fetch a release-signing public key
+      operationId: getSigningKey
+      security: []
+      parameters:
+        - in: path
+          name: keyId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64, pattern: '^[a-z0-9][a-z0-9._-]*$' }
+      responses:
+        '200':
+          {
+            description: Ed25519 public JWK.,
+            content: { application/jwk+json: { schema: { type: object } } },
+          }
+        '404': { $ref: '#/components/responses/Problem' }
+  /content/v1/media/{mediaId}:
+    get:
+      tags: [Public content]
+      summary: Fetch Production-referenced media
+      operationId: getProductionMedia
+      security: []
+      parameters: [{ $ref: '#/components/parameters/MediaId' }]
+      responses:
+        '200': { description: Media referenced by current Production manifest. }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    sessionCookie: { type: apiKey, in: cookie, name: __Host-pointapp_builder_session }
+  parameters:
+    Cursor: { in: query, name: cursor, schema: { type: string, maxLength: 256 } }
+    Limit:
+      { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+    IdempotencyKey:
+      { in: header, name: Idempotency-Key, required: true, schema: { type: string, format: uuid } }
+    DraftId:
+      { in: path, name: draftId, required: true, schema: { $ref: '#/components/schemas/Id' } }
+    MediaId:
+      { in: path, name: mediaId, required: true, schema: { $ref: '#/components/schemas/Id' } }
+    GitHubUserId:
+      {
+        in: path,
+        name: githubUserId,
+        required: true,
+        schema: { type: string, pattern: '^[1-9][0-9]{0,19}$' },
+      }
+  responses:
+    Problem:
+      description: Safe typed error.
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    RateLimited:
+      description: Request rate limited.
+      headers: { Retry-After: { schema: { type: integer, minimum: 1 } } }
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+  schemas:
+    Id: { type: string, format: uuid }
+    Role: { type: string, enum: [editor, publisher, administrator, owner] }
+    MembershipStatus: { type: string, enum: [pending, active, disabled] }
+    Membership:
+      type: object
+      required: [githubUserId, login, role, status, version, requestedAt]
+      properties:
+        githubUserId: { type: string }
+        login: { type: string }
+        displayName: { type: [string, 'null'] }
+        avatarUrl: { type: [string, 'null'], format: uri }
+        role: { $ref: '#/components/schemas/Role' }
+        status: { $ref: '#/components/schemas/MembershipStatus' }
+        version: { type: integer, minimum: 1 }
+        requestedAt: { type: string, format: date-time }
+        approvedAt: { type: [string, 'null'], format: date-time }
+        disabledAt: { type: [string, 'null'], format: date-time }
+    SessionView:
+      type: object
+      required: [state]
+      properties:
+        state: { type: string, enum: [signed-out, pending, disabled, active, unavailable] }
+        membership: { anyOf: [{ $ref: '#/components/schemas/Membership' }, { type: 'null' }] }
+        capabilities: { type: array, uniqueItems: true, items: { type: string } }
+    DraftSummary:
+      type: object
+      required: [id, name, state, version, currentRevision, updatedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        name: { type: string }
+        state: { type: string, enum: [active, archived] }
+        version: { type: integer, minimum: 1 }
+        currentRevision: { $ref: '#/components/schemas/RevisionSummary' }
+        updatedAt: { type: string, format: date-time }
+    DraftDetail:
+      allOf:
+        - { $ref: '#/components/schemas/DraftSummary' }
+        - type: object
+          required: [manifest]
+          properties: { manifest: { $ref: '#/components/schemas/Manifest' } }
+    RevisionSummary:
+      type: object
+      required: [id, draftId, sequence, checksum, schemaVersion, label, createdBy, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        draftId: { $ref: '#/components/schemas/Id' }
+        parentRevisionId: { anyOf: [{ $ref: '#/components/schemas/Id' }, { type: 'null' }] }
+        sequence: { type: integer, minimum: 1 }
+        checksum: { type: string, pattern: '^[a-f0-9]{64}$' }
+        schemaVersion: { type: integer, minimum: 1 }
+        label: { type: string }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+    Manifest:
+      type: object
+      required: [schemaVersion, app, settings, theme, audiences, screens, navigation, campaigns]
+      additionalProperties: false
+      properties:
+        schemaVersion: { type: integer, const: 1 }
+        app: { $ref: '#/components/schemas/AppIdentity' }
+        settings: { $ref: '#/components/schemas/AppSettings' }
+        theme: { $ref: '#/components/schemas/AppTheme' }
+        audiences: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/Audience' } }
+        screens:
+          {
+            type: array,
+            minItems: 1,
+            maxItems: 100,
+            items: { $ref: '#/components/schemas/Screen' },
+          }
+        navigation:
+          {
+            type: array,
+            minItems: 2,
+            maxItems: 5,
+            items: { $ref: '#/components/schemas/NavigationItem' },
+          }
+        campaigns: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/Campaign' } }
+    Identifier:
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: '^[a-z][a-z0-9-]*$'
+    Destination:
+      type: string
+      maxLength: 500
+      pattern: '^(?:/|https://)'
+    AppIdentity:
+      type: object
+      additionalProperties: false
+      required: [id, name, shortName, tagline]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        shortName: { type: string, minLength: 1, maxLength: 18 }
+        tagline: { type: string, maxLength: 160 }
+    AppSettings:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          organizationName,
+          supportUrl,
+          privacyUrl,
+          termsUrl,
+          locale,
+          timeZone,
+          refreshSeconds,
+          minimumClientContract,
+        ]
+      properties:
+        organizationName: { type: string, minLength: 1, maxLength: 120 }
+        supportUrl: { type: string, format: uri, pattern: '^https://' }
+        privacyUrl: { type: string, format: uri, pattern: '^https://' }
+        termsUrl: { type: string, format: uri, pattern: '^https://' }
+        locale: { type: string, pattern: '^[a-z]{2}(?:-[A-Z]{2})?$' }
+        timeZone: { type: string, minLength: 1, maxLength: 80 }
+        refreshSeconds: { type: integer, minimum: 30, maximum: 86400 }
+        minimumClientContract: { type: integer, minimum: 1, maximum: 100 }
+    AppTheme:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          accent,
+          accentContrast,
+          background,
+          surface,
+          text,
+          muted,
+          logoMediaId,
+          typographyScale,
+          cornerStyle,
+          colorMode,
+        ]
+      properties:
+        accent: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        accentContrast: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        background: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        surface: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        text: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        muted: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        logoMediaId: { anyOf: [{ $ref: '#/components/schemas/Id' }, { type: 'null' }] }
+        typographyScale: { type: string, enum: [compact, standard, large] }
+        cornerStyle: { type: string, enum: [square, soft, round] }
+        colorMode: { type: string, enum: [light, dark, system] }
+    Audience:
+      type: object
+      additionalProperties: false
+      required: [id, name, description]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        description: { type: string, maxLength: 240 }
+    NavigationItem:
+      type: object
+      additionalProperties: false
+      required: [id, label, icon, screenId]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        label: { type: string, minLength: 1, maxLength: 20 }
+        icon: { type: string, enum: [home, calendar, play, people, more] }
+        screenId: { $ref: '#/components/schemas/Identifier' }
+    Campaign:
+      type: object
+      additionalProperties: false
+      required: [id, title, body, destination, audienceId, status, scheduledAt]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        title: { type: string, minLength: 1, maxLength: 100 }
+        body: { type: string, minLength: 1, maxLength: 240 }
+        destination: { $ref: '#/components/schemas/Destination' }
+        audienceId: { anyOf: [{ $ref: '#/components/schemas/Identifier' }, { type: 'null' }] }
+        status: { type: string, enum: [draft, ready, scheduled] }
+        scheduledAt: { type: [string, 'null'], format: date-time }
+    Screen:
+      type: object
+      additionalProperties: false
+      required: [id, title, slug, visible, audienceIds, elements]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        title: { type: string, minLength: 1, maxLength: 80 }
+        slug: { $ref: '#/components/schemas/Identifier' }
+        visible: { type: boolean }
+        audienceIds:
+          { type: array, maxItems: 50, items: { $ref: '#/components/schemas/Identifier' } }
+        elements: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/AppElement' } }
+    AppElement:
+      type: object
+      required: [id, type, audienceIds]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        type:
+          {
+            type: string,
+            enum:
+              [
+                hero,
+                rich-text,
+                action,
+                image,
+                video,
+                audio,
+                card-list,
+                event-list,
+                scripture,
+                divider,
+                spacer,
+                embed-link,
+              ],
+          }
+        audienceIds:
+          { type: array, maxItems: 50, items: { $ref: '#/components/schemas/Identifier' } }
+      discriminator: { propertyName: type }
+      allOf:
+        - oneOf:
+            - { $ref: '#/components/schemas/HeroElement' }
+            - { $ref: '#/components/schemas/RichTextElement' }
+            - { $ref: '#/components/schemas/ActionElement' }
+            - { $ref: '#/components/schemas/ImageElement' }
+            - { $ref: '#/components/schemas/VideoElement' }
+            - { $ref: '#/components/schemas/AudioElement' }
+            - { $ref: '#/components/schemas/CardListElement' }
+            - { $ref: '#/components/schemas/EventListElement' }
+            - { $ref: '#/components/schemas/ScriptureElement' }
+            - { $ref: '#/components/schemas/DividerElement' }
+            - { $ref: '#/components/schemas/SpacerElement' }
+            - { $ref: '#/components/schemas/EmbedLinkElement' }
+    HeroElement:
+      type: object
+      required: [type, eyebrow, title, body, imageMediaId, actionLabel, actionDestination]
+      properties:
+        type: { type: string, const: hero }
+        eyebrow: { type: string, maxLength: 60 }
+        title: { type: string, minLength: 1, maxLength: 100 }
+        body: { type: string, maxLength: 500 }
+        imageMediaId: { anyOf: [{ $ref: '#/components/schemas/Id' }, { type: 'null' }] }
+        actionLabel: { type: string, maxLength: 40 }
+        actionDestination:
+          { anyOf: [{ $ref: '#/components/schemas/Destination' }, { type: string, const: '' }] }
+    RichTextElement:
+      type: object
+      required: [type, body, style]
+      properties:
+        type: { type: string, const: rich-text }
+        body: { type: string, minLength: 1, maxLength: 10000 }
+        style: { type: string, enum: [body, lead, caption] }
+    ActionElement:
+      type: object
+      required: [type, label, destination, appearance]
+      properties:
+        type: { type: string, const: action }
+        label: { type: string, minLength: 1, maxLength: 40 }
+        destination: { $ref: '#/components/schemas/Destination' }
+        appearance: { type: string, enum: [primary, secondary, quiet] }
+    ImageElement:
+      type: object
+      required: [type, mediaId, alt, aspect]
+      properties:
+        type: { type: string, const: image }
+        mediaId: { $ref: '#/components/schemas/Id' }
+        alt: { type: string, minLength: 1, maxLength: 500 }
+        aspect: { type: string, enum: [square, portrait, landscape, wide] }
+    VideoElement:
+      type: object
+      required: [type, mediaId, title]
+      properties:
+        type: { type: string, const: video }
+        mediaId: { $ref: '#/components/schemas/Id' }
+        title: { type: string, minLength: 1, maxLength: 120 }
+    AudioElement:
+      type: object
+      required: [type, mediaId, title, speaker]
+      properties:
+        type: { type: string, const: audio }
+        mediaId: { $ref: '#/components/schemas/Id' }
+        title: { type: string, minLength: 1, maxLength: 120 }
+        speaker: { type: string, maxLength: 120 }
+    Card:
+      type: object
+      additionalProperties: false
+      required: [id, title, body, destination, imageMediaId]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        title: { type: string, minLength: 1, maxLength: 100 }
+        body: { type: string, maxLength: 280 }
+        destination: { $ref: '#/components/schemas/Destination' }
+        imageMediaId: { anyOf: [{ $ref: '#/components/schemas/Id' }, { type: 'null' }] }
+    CardListElement:
+      type: object
+      required: [type, title, cards]
+      properties:
+        type: { type: string, const: card-list }
+        title: { type: string, maxLength: 100 }
+        cards:
+          { type: array, minItems: 1, maxItems: 20, items: { $ref: '#/components/schemas/Card' } }
+    EventListElement:
+      type: object
+      required: [type, title, sourceUrl, limit]
+      properties:
+        type: { type: string, const: event-list }
+        title: { type: string, maxLength: 100 }
+        sourceUrl: { type: string, format: uri, pattern: '^https://' }
+        limit: { type: integer, minimum: 1, maximum: 20 }
+    ScriptureElement:
+      type: object
+      required: [type, reference, text, translation]
+      properties:
+        type: { type: string, const: scripture }
+        reference: { type: string, minLength: 1, maxLength: 80 }
+        text: { type: string, minLength: 1, maxLength: 5000 }
+        translation: { type: string, minLength: 2, maxLength: 20 }
+    DividerElement:
+      type: object
+      required: [type]
+      properties: { type: { type: string, const: divider } }
+    SpacerElement:
+      type: object
+      required: [type, size]
+      properties:
+        type: { type: string, const: spacer }
+        size: { type: string, enum: [small, medium, large] }
+    EmbedLinkElement:
+      type: object
+      required: [type, title, url, height]
+      properties:
+        type: { type: string, const: embed-link }
+        title: { type: string, minLength: 1, maxLength: 100 }
+        url: { type: string, format: uri, pattern: '^https://' }
+        height: { type: integer, minimum: 180, maximum: 900 }
+    MediaInput:
+      type: object
+      required: [kind, title]
+      properties:
+        kind: { type: string, enum: [image, audio, video] }
+        title: { type: string, minLength: 1, maxLength: 120 }
+        altText: { type: string, minLength: 1, maxLength: 500 }
+        externalUrl: { type: string, format: uri, pattern: '^https://' }
+        captionUrl: { type: string, format: uri, pattern: '^https://' }
+        expectedSha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+    MediaAsset:
+      allOf:
+        - { $ref: '#/components/schemas/MediaInput' }
+        - type: object
+          required: [id, state, mimeType, byteSize, sha256, createdAt]
+          properties:
+            id: { $ref: '#/components/schemas/Id' }
+            state: { type: string, enum: [ready, archived] }
+            mimeType: { type: string }
+            byteSize: { type: integer, minimum: 0 }
+            width: { type: [integer, 'null'], minimum: 1 }
+            height: { type: [integer, 'null'], minimum: 1 }
+            durationSeconds: { type: [number, 'null'], minimum: 0 }
+            sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+            createdAt: { type: string, format: date-time }
+    ValidationIssue:
+      type: object
+      required: [code, path, message, severity]
+      properties:
+        code: { type: string }
+        path: { type: string }
+        message: { type: string }
+        severity: { type: string, enum: [error, warning] }
+    ValidationReport:
+      type: object
+      required: [valid, revisionId, manifestDigest, reportDigest, issues]
+      properties:
+        valid: { type: boolean }
+        revisionId: { $ref: '#/components/schemas/Id' }
+        manifestDigest: { type: string, pattern: '^[a-f0-9]{64}$' }
+        reportDigest: { type: string, pattern: '^[a-f0-9]{64}$' }
+        issues: { type: array, items: { $ref: '#/components/schemas/ValidationIssue' } }
+    ReleaseView:
+      type: object
+      required:
+        [eventId, channel, eventKind, releaseId, revisionId, manifestDigest, keyId, createdAt]
+      properties:
+        eventId: { $ref: '#/components/schemas/Id' }
+        channel: { type: string, enum: [staging, production] }
+        eventKind: { type: string, enum: [publish, promote, rollback] }
+        releaseId: { $ref: '#/components/schemas/Id' }
+        revisionId: { $ref: '#/components/schemas/Id' }
+        manifestDigest: { type: string, pattern: '^[a-f0-9]{64}$' }
+        keyId: { type: string }
+        signature: { type: string, contentEncoding: base64url }
+        createdAt: { type: string, format: date-time }
+    PublicReleaseEnvelope:
+      type: object
+      required:
+        [
+          contractVersion,
+          releaseId,
+          revisionId,
+          manifestDigest,
+          releasedAt,
+          signing,
+          compatibility,
+          manifest,
+        ]
+      additionalProperties: false
+      properties:
+        contractVersion: { type: integer, const: 1 }
+        releaseId: { $ref: '#/components/schemas/Id' }
+        revisionId: { $ref: '#/components/schemas/Id' }
+        manifestDigest: { type: string, pattern: '^[a-f0-9]{64}$' }
+        releasedAt: { type: string, format: date-time }
+        signing:
+          type: object
+          required: [algorithm, keyId, signature]
+          properties:
+            algorithm: { type: string, const: Ed25519 }
+            keyId: { type: string }
+            signature: { type: string, contentEncoding: base64url }
+        compatibility:
+          type: object
+          required: [manifestSchema, minimumClientContract]
+          properties:
+            manifestSchema: { type: integer, minimum: 1 }
+            minimumClientContract: { type: integer, minimum: 1 }
+        manifest: { $ref: '#/components/schemas/Manifest' }
+    AuditEvent:
+      type: object
+      required: [id, requestId, action, targetType, outcome, occurredAt]
+      properties:
+        id: { $ref: '#/components/schemas/Id' }
+        requestId: { $ref: '#/components/schemas/Id' }
+        actorGithubUserId: { type: [string, 'null'] }
+        actorRole: { anyOf: [{ $ref: '#/components/schemas/Role' }, { type: 'null' }] }
+        action: { type: string }
+        targetType: { type: string }
+        targetId: { type: [string, 'null'] }
+        outcome: { type: string, enum: [succeeded, denied, failed] }
+        reason: { type: [string, 'null'] }
+        occurredAt: { type: string, format: date-time }
+    Health:
+      type: object
+      required: [status, service, environment, checks, time]
+      properties:
+        status: { type: string, enum: [ok, degraded] }
+        service: { type: string, const: pointapp-builder }
+        environment: { type: string, enum: [local, production] }
+        checks: { type: object, additionalProperties: { type: string, enum: [ok, unavailable] } }
+        time: { type: string, format: date-time }
+    OperationsView:
+      type: object
+      required: [health, channels, capacity]
+      properties:
+        health: { $ref: '#/components/schemas/Health' }
+        channels:
+          {
+            type: object,
+            additionalProperties:
+              { anyOf: [{ $ref: '#/components/schemas/ReleaseView' }, { type: 'null' }] },
+          }
+        capacity: { type: object, additionalProperties: { type: integer, minimum: 0 } }
+    Page:
+      type: object
+      required: [items]
+      properties: { nextCursor: { type: [string, 'null'] } }
+    Problem:
+      type: object
+      required: [type, title, status, code, requestId]
+      additionalProperties: false
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        code: { type: string, pattern: '^[A-Z0-9_]+$' }
+        detail: { type: string }
+        requestId: { $ref: '#/components/schemas/Id' }
+        fields: { type: object, additionalProperties: { type: array, items: { type: string } } }

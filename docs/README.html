@@ -69,26 +69,31 @@
   </head>
   <body>
     <main>
-      <p class="tag">Private product foundation</p>
+      <p class="tag">Production control plane</p>
       <h1>PointApp Builder</h1>
       <p>
         Role-governed content authoring and release infrastructure for the Point Community Church
         phone and tablet application.
       </p>
       <section class="card">
-        <strong>Foundation status</strong>
+        <strong>Implemented system</strong>
         <p>
-          The repository currently contains the product specification, versioned content and release
-          contracts, a responsive Builder shell, a phone/tablet staging preview, and quality
-          automation. Collaborative persistence, protected API services, PointApp integration, and
-          Production publishing remain intentionally disconnected.
+          The private repository contains GitHub App authentication, server-enforced access,
+          persistent drafts and media, immutable revisions, signed PointApp Staging and Production
+          channels, exact-candidate promotion, rollback, audit operations, and phone/tablet
+          previews. Installed PointApps consume the public signed Production content contract;
+          native app code and app-store delivery remain separate.
         </p>
       </section>
       <h2>Start locally</h2>
       <ol>
         <li>Install Node.js 22.13 or newer.</li>
         <li>Run <code>npm ci</code>.</li>
-        <li>Run <code>npm run dev</code>.</li>
+        <li>Copy <code>.dev.vars.example</code> to a local untracked <code>.dev.vars</code>.</li>
+        <li>Run <code>npm run db:migrate:local</code>, then <code>npm run dev</code>.</li>
+        <li>
+          Use the loopback-only <code>/auth/dev</code> fixture for deterministic role testing.
+        </li>
         <li>Run <code>npm run check</code> and <code>npm run test:e2e</code> before review.</li>
       </ol>
       <h2>Source map</h2>
@@ -97,16 +102,28 @@
         <li><code>src/domain</code> — authorization and release policy.</li>
         <li><code>src/preview</code> — renderer used by the staging canvas.</li>
         <li><code>src/client</code> — separate Builder panels and workspace shell.</li>
-        <li><code>specs/001-foundation/spec.html</code> — governing foundation specification.</li>
+        <li><code>src/server</code> — protected Worker API, persistence, signing, and audit.</li>
+        <li>
+          <code>specs/003-complete-builder/spec.html</code> — governing product specification.
+        </li>
         <li><code>docs/architecture.html</code> — system boundaries and delivery path.</li>
       </ul>
       <h2>Hosting status</h2>
       <p>
-        The private repository deploys to a dedicated Cloudflare Worker at
-        <code>appbuilder.pointatx.org</code>. The Worker serves the compiled client, reports health
-        through an isolated D1 binding, and fails closed for unfinished API and authentication
-        routes. Authentication, collaborative drafts, PointApp delivery, and Production publishing
-        remain intentionally disabled.
+        The private repository deploys directly to one Production Cloudflare Worker at
+        <code>appbuilder.pointatx.org</code>. GitHub Pages cannot supply the protected Worker API,
+        D1 persistence, or secret-held signing required by this Builder. There is no Builder
+        staging/canary environment. The existing organization GitHub App authenticates users; GitHub
+        user <code>1202831</code> is the only bootstrap Owner, and every other verified GitHub
+        identity begins as a pending Editor with no protected access.
+      </p>
+      <h2>Release distinction</h2>
+      <p>
+        Deploying this Builder updates the Builder Production service. Publishing inside the Builder
+        instead advances PointApp content from an immutable draft revision to PointApp Staging and
+        then, after Administrator or Owner approval, to PointApp Production. Online devices receive
+        changed content on launch or their next configured refresh; executable features still
+        require Apple App Store and Google Play releases.
       </p>
     </main>
   </body>

@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PointApp Builder — Threat Model</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080b11;
+        --panel: #121a27;
+        --line: #2b374b;
+        --text: #eef4ff;
+        --muted: #aab5c7;
+        --blue: #7dd3fc;
+        --green: #86efac;
+        --amber: #fde68a;
+        --red: #fca5a5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at 80% 0, #18253a, #080b11 42%);
+        color: var(--text);
+        font:
+          15px/1.56 Inter,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1220px;
+        margin: auto;
+        padding: 48px 22px 96px;
+      }
+      h1 {
+        font-size: clamp(2.3rem, 6vw, 4.6rem);
+        line-height: 1;
+        margin: 0.3em 0;
+      }
+      h2 {
+        color: var(--blue);
+        margin-top: 2.8rem;
+      }
+      h3 {
+        color: var(--green);
+      }
+      .eyebrow {
+        color: var(--green);
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      .lede,
+      .muted,
+      td {
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: linear-gradient(145deg, #151f2e, #101722);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px;
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 10px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--blue);
+      }
+      code {
+        color: #bae6fd;
+      }
+      .high {
+        color: var(--red);
+      }
+      .medium {
+        color: var(--amber);
+      }
+      .low {
+        color: var(--green);
+      }
+      .flow {
+        white-space: pre-wrap;
+        font:
+          14px/1.8 ui-monospace,
+          monospace;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Repository-grounded threat model · pre-implementation</p>
+      <h1>Protect authority and the content supply chain.</h1>
+      <p class="lede">
+        Scope: the React Builder, Cloudflare Worker API, D1 records, GitHub OAuth integration,
+        signed PointApp content channels, and public Production media. The separate native PointApp
+        and app-store delivery are outside this repository.
+      </p>
+      <h2>Validation status</h2>
+      <section class="card">
+        <p>
+          <strong>Owner question asked:</strong> should access requests accept any valid GitHub user
+          or require PointCommunity organization membership?
+        </p>
+        <p class="medium">
+          <strong>Unconfirmed assumption:</strong> any valid GitHub identity may register as a
+          Pending Editor. Pending accounts receive no protected data or mutation capabilities. If
+          the Owner chooses organization-members-only registration, the OAuth/app permission and
+          authorization design must be revised before deployment.
+        </p>
+      </section>
+      <h2>Trust boundaries</h2>
+      <section class="card flow">
+        Untrusted browser ── HTTPS ──▶ Cloudflare edge / Worker │ │ │ GitHub redirect ├── protected
+        API ──▶ D1 ▼ ├── secret bindings ─▶ OAuth + Ed25519 keys GitHub OAuth
+        ◀───────────────────────┘ Anonymous PointApp client ── HTTPS + ETag ──▶ public Production
+        channel / key / reachable media Boundary rule: static client assets contain no credentials,
+        roles, drafts, private media, release authority, or signing secrets.
+      </section>
+      <h2>Assets and attacker capabilities</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Critical assets</h3>
+          <ul class="muted">
+            <li>Owner/Admin authority and membership state</li>
+            <li>OAuth client secret and session-signing secret</li>
+            <li>Ed25519 private release key</li>
+            <li>Private drafts and non-production media</li>
+            <li>Immutable revision and release history</li>
+            <li>Production channel pointer and audit evidence</li>
+          </ul>
+        </section>
+        <section class="card">
+          <h3>Credible attackers</h3>
+          <ul class="muted">
+            <li>Unauthenticated internet client</li>
+            <li>Pending or Disabled GitHub identity</li>
+            <li>Malicious/compromised Editor or Publisher</li>
+            <li>Compromised browser/session</li>
+            <li>Replay client or automated abuse source</li>
+            <li>Accidental operator or faulty deployment</li>
+          </ul>
+        </section>
+        <section class="card">
+          <h3>Explicit non-capabilities</h3>
+          <ul class="muted">
+            <li>No assumed Cloudflare/GitHub administrative compromise</li>
+            <li>No native-app executable update through manifests</li>
+            <li>No direct access to the private repository</li>
+            <li>No server trust in client-displayed roles or hidden buttons</li>
+          </ul>
+        </section>
+      </div>
+      <h2>Priority threats and controls</h2>
+      <section class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>ID / severity</th>
+              <th>Abuse path</th>
+              <th>Impact</th>
+              <th>Required controls</th>
+              <th>Verification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="high">T01 Critical</td>
+              <td>Arbitrary first visitor wins Owner bootstrap.</td>
+              <td>Total Builder and Production-content takeover.</td>
+              <td>
+                Stable bootstrap GitHub ID secret/config; atomic conditional insert; all other
+                identities Pending Editor.
+              </td>
+              <td>
+                Concurrent first-login integration tests with designated and hostile identities.
+              </td>
+            </tr>
+            <tr>
+              <td class="high">T02 Critical</td>
+              <td>Client modifies role/capability fields or calls hidden endpoints directly.</td>
+              <td>Unauthorized edits, access changes, or publication.</td>
+              <td>
+                Current D1 membership read on every protected request; explicit route capability
+                matrix; no role input from browser.
+              </td>
+              <td>Complete executable role/status × endpoint denial matrix.</td>
+            </tr>
+            <tr>
+              <td class="high">T03 Critical</td>
+              <td>
+                OAuth login CSRF, callback injection, code interception, or cookie collision with
+                PointSite Builder.
+              </td>
+              <td>Session fixation/account confusion.</td>
+              <td>
+                Exact callback; state; PKCE S256; short-lived one-time OAuth cookie; unique
+                <code>__Host-</code> cookie names; Secure, HttpOnly, SameSite=Lax; discard access
+                token after identity fetch.
+              </td>
+              <td>Tampered/expired/replayed state and verifier tests; exact redirect assertion.</td>
+            </tr>
+            <tr>
+              <td class="high">T04 Critical</td>
+              <td>Publisher alters payload between Staging validation and Production promotion.</td>
+              <td>Unreviewed content reaches installed apps.</td>
+              <td>
+                Immutable canonical manifest bytes and digest; signed envelope; Production promotion
+                references current Staging release without rebuild.
+              </td>
+              <td>
+                Digest/byte equality tests; mutation attempts fail; signature verification fixture.
+              </td>
+            </tr>
+            <tr>
+              <td class="high">T05 Critical</td>
+              <td>Compromised Owner disables/demotes all Owners or self-locks the installation.</td>
+              <td>Governance outage or permanent loss of control.</td>
+              <td>Transactional last-active-Owner guard; self-action guard; audit all attempts.</td>
+              <td>Concurrent demotion/disable tests and denied-event audit assertions.</td>
+            </tr>
+            <tr>
+              <td class="high">T06 High</td>
+              <td>Draft media ID guessed through public route.</td>
+              <td>Private content disclosure.</td>
+              <td>
+                Anonymous media reachability computed only from active Production manifest;
+                authenticated draft route separately authorized; no static upload paths.
+              </td>
+              <td>Orphan, archived, Staging-only, and prior-release media denial tests.</td>
+            </tr>
+            <tr>
+              <td class="high">T07 High</td>
+              <td>
+                Stored HTML/script, unsafe URL, oversized JSON/binary, or decompression/resource
+                abuse.
+              </td>
+              <td>XSS, phishing, Worker/D1 exhaustion.</td>
+              <td>
+                Typed element schemas; render text without raw HTML; HTTPS/allowlisted schemes;
+                body/type/dimension/count bounds; CSP; upload checks; rate limits.
+              </td>
+              <td>Fuzz/boundary tests, browser XSS probes, CSP and 413/415 assertions.</td>
+            </tr>
+            <tr>
+              <td class="high">T08 High</td>
+              <td>Cross-site mutation using ambient session cookie.</td>
+              <td>Unauthorized saves/publishing/access changes.</td>
+              <td>
+                Exact Origin/Host enforcement for unsafe methods; JSON-only API; SameSite cookie; no
+                permissive CORS; idempotency.
+              </td>
+              <td>Missing/foreign Origin and simple-content-type request tests.</td>
+            </tr>
+            <tr>
+              <td class="medium">T09 Medium</td>
+              <td>Retry/replay duplicates publish, rollback, upload, or role mutation.</td>
+              <td>Confusing history and repeated side effects.</td>
+              <td>
+                Actor-scoped idempotency key + normalized request hash stored transactionally;
+                conflict on key/body mismatch.
+              </td>
+              <td>Concurrent duplicate and mismatched-replay tests.</td>
+            </tr>
+            <tr>
+              <td class="medium">T10 Medium</td>
+              <td>Stale editor overwrites a newer revision.</td>
+              <td>Silent content loss.</td>
+              <td>
+                Expected parent ID and transactional current-revision comparison; immutable revision
+                append.
+              </td>
+              <td>Two-client conflict integration and UI recovery journey.</td>
+            </tr>
+            <tr>
+              <td class="medium">T11 Medium</td>
+              <td>
+                Secrets or private objects leak in bundle, errors, logs, health, audit, or
+                repository.
+              </td>
+              <td>Credential compromise/data disclosure.</td>
+              <td>
+                Bindings/secrets only; typed safe errors; redacted structured audit; health reports
+                names/status not values; secret scan.
+              </td>
+              <td>Bundle/repo scan, response snapshots, log assertions.</td>
+            </tr>
+            <tr>
+              <td class="medium">T12 Medium</td>
+              <td>Rate-limit evasion or shared-IP denial.</td>
+              <td>Abuse or legitimate user lockout.</td>
+              <td>
+                Prefer actor+operation keys; IP only for unauthenticated flows; treat binding as
+                best-effort; authorization remains exact.
+              </td>
+              <td>Key-selection unit tests and 429 route tests.</td>
+            </tr>
+            <tr>
+              <td class="medium">T13 Medium</td>
+              <td>Malicious/invalid manifest crashes older installed clients.</td>
+              <td>App availability loss.</td>
+              <td>
+                Schema version, minimum compatibility, bounded structures, full pre-release
+                validation, signature, last-known-good cache guidance.
+              </td>
+              <td>Contract fixtures across supported/incompatible schemas.</td>
+            </tr>
+            <tr>
+              <td class="low">T14 Low</td>
+              <td>Audit table grows without bound or includes excessive metadata.</td>
+              <td>Cost/privacy degradation.</td>
+              <td>
+                Bounded metadata schema, pagination, capacity view, explicit retention/archive
+                policy before scale requires it.
+              </td>
+              <td>Payload-size and pagination tests; capacity threshold checks.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <h2>Security invariants</h2>
+      <ul class="muted">
+        <li>
+          Only login start, OAuth callback, health, static assets, active Production content/key,
+          and Production-reachable media are anonymous.
+        </li>
+        <li>
+          Authentication proves GitHub identity; D1 membership grants Builder authority. They are
+          not interchangeable.
+        </li>
+        <li>
+          Every successful, denied, or failed high-value mutation has one correlated audit event.
+        </li>
+        <li>
+          The private signing key, OAuth secret, and session secret are Worker bindings and never
+          response fields.
+        </li>
+        <li>Local identity fixtures fail closed outside loopback development.</li>
+        <li>
+          Changing the registration boundary or GitHub App permissions requires this threat model to
+          be revisited.
+        </li>
+      </ul>
+      <h2>Residual risks and operations</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>GitHub/Cloudflare control planes</h3>
+          <p class="muted">
+            Administrative compromise is outside application controls. Mitigate operationally with
+            least privilege, organization 2FA, protected accounts, secret rotation, and audit
+            review.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Immediate delivery</h3>
+          <p class="muted">
+            Online apps can observe a changed ETag immediately; offline devices cannot. The native
+            app must verify signatures and atomically retain last-known-good content.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Human content risk</h3>
+          <p class="muted">
+            Schema validation cannot determine theological accuracy, image rights, or pastoral
+            appropriateness. Human Staging review remains required before Production promotion.
+          </p>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

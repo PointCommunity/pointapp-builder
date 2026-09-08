@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PointApp Builder — Engineering Quickstart</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0d12;
+        --panel: #141c29;
+        --line: #2d394d;
+        --text: #eef4ff;
+        --muted: #aab5c7;
+        --accent: #7dd3fc;
+        --good: #86efac;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.6 Inter,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 980px;
+        margin: auto;
+        padding: 50px 22px 90px;
+      }
+      h1 {
+        font-size: clamp(2.1rem, 6vw, 4.2rem);
+        line-height: 1;
+      }
+      h2 {
+        color: var(--accent);
+        margin-top: 2.6rem;
+      }
+      .eyebrow {
+        color: var(--good);
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        padding: 20px;
+        border-radius: 16px;
+        margin: 14px 0;
+      }
+      .muted,
+      li {
+        color: var(--muted);
+      }
+      pre {
+        background: #06080d;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+        overflow: auto;
+        color: #dbeafe;
+      }
+      code {
+        color: #bae6fd;
+      }
+      .good {
+        color: var(--good);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Engineering quickstart</p>
+      <h1>Reproduce the Builder locally.</h1>
+      <p class="muted">
+        These workflows use deterministic local identities and a local D1 database. Local auth
+        fixtures must refuse non-loopback requests and must never be configured in the deployed
+        Worker.
+      </p>
+      <h2>Prerequisites</h2>
+      <section class="card">
+        <ul>
+          <li>Node.js 22.13 or later and npm.</li>
+          <li>
+            Repository checkout on <code>codex/003-complete-builder</code> while developing;
+            deployment is only from reviewed <code>main</code>.
+          </li>
+          <li>Cloudflare credentials are required only for remote migration/deployment.</li>
+        </ul>
+      </section>
+      <h2>Install and initialize</h2>
+      <pre><code>npm ci
+npm run db:migrate:local
+npm run dev</code></pre>
+      <p class="muted">
+        The local server prints its loopback URL. It must not print secrets, tokens, or signed
+        cookies.
+      </p>
+      <h2>Identity scenarios</h2>
+      <div class="card">
+        <p>
+          <strong>Bootstrap Owner:</strong> use fixture GitHub ID <code>1202831</code>; the first
+          local login creates an Active Owner.
+        </p>
+        <p>
+          <strong>Pending Editor:</strong> use any other fixture ID; the session may view only its
+          pending state until the Owner approves it.
+        </p>
+        <p>
+          <strong>Role matrix:</strong> seed deterministic Editor, Publisher, Administrator, Owner,
+          Pending, and Disabled identities through the test-only fixture helper.
+        </p>
+      </div>
+      <h2>Core integration journey</h2>
+      <ol>
+        <li>
+          Sign in as bootstrap Owner and confirm the server reports the real membership; no role
+          selector exists.
+        </li>
+        <li>
+          Approve a Pending Editor, assign Editor, then verify immediate access without a new OAuth
+          round trip.
+        </li>
+        <li>
+          Create a draft; configure branding, settings, audiences, navigation, screens, all
+          supported element types, accessible media, and one notification campaign.
+        </li>
+        <li>
+          Save a revision, reload it, and verify a stale-parent save is rejected without data loss.
+        </li>
+        <li>As Publisher, publish that exact revision to PointApp Staging.</li>
+        <li>
+          As Administrator, promote current Staging to Production and compare manifest digests
+          byte-for-byte.
+        </li>
+        <li>
+          Fetch the anonymous Production endpoint, public key, and referenced media; verify
+          unrelated draft media is denied.
+        </li>
+        <li>Repeat the Production fetch with <code>If-None-Match</code> and expect 304.</li>
+        <li>
+          As Owner, publish another candidate and roll back to the prior Production release with a
+          reason.
+        </li>
+      </ol>
+      <h2>Required local gates</h2>
+      <pre><code>npm run format:check
+npm run types:check
+npm run typecheck
+npm run lint -- --max-warnings=0
+npm run contract:check
+npm run db:migrate:test
+npm run test:coverage
+npm run build
+npm audit --audit-level=high
+npm run test:performance
+npm run test:e2e</code></pre>
+      <p class="good"><strong>No skipped or quarantined failing tests count as green.</strong></p>
+      <h2>Production rule</h2>
+      <section class="card">
+        <p class="muted">
+          After review, merge to <code>main</code>, confirm the exact commit is clean and green in
+          GitHub Actions, apply the forward migration, deploy that exact commit directly to
+          <code>appbuilder.pointatx.org</code>, and run live endpoint plus browser verification. The
+          Builder has no canary/staging deployment.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PointApp Builder automated verification — 2026-09-07</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        background: #0b1020;
+        color: #e8ecf7;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 74rem;
+        padding: clamp(1rem, 4vw, 3rem);
+        line-height: 1.55;
+      }
+      header,
+      section {
+        border: 1px solid #2a3654;
+        border-radius: 1rem;
+        background: #121a2c;
+        margin-block: 1rem;
+        padding: clamp(1rem, 3vw, 2rem);
+      }
+      h1,
+      h2 {
+        color: #fff;
+        line-height: 1.15;
+      }
+      .status {
+        color: #75e6ad;
+        font-weight: 700;
+      }
+      .pending {
+        color: #ffd38a;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        border-bottom: 1px solid #2a3654;
+        padding: 0.7rem;
+        text-align: left;
+        vertical-align: top;
+      }
+      code {
+        background: #080c17;
+        border-radius: 0.35rem;
+        color: #bcd3ff;
+        padding: 0.15rem 0.35rem;
+      }
+      a {
+        color: #8db8ff;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p>PointApp Builder · automated verification record</p>
+      <h1>Complete Builder implementation</h1>
+      <p class="status">Local release gates passed on 2026-09-07</p>
+      <p class="pending">
+        GitHub App configuration, exact-commit CI, production deployment, and live verification are
+        tracked as subsequent delivery gates and are not claimed by this local report.
+      </p>
+    </header>
+
+    <section>
+      <h2>Evidence summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Gate</th>
+            <th>Result</th>
+            <th>Evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Repository quality</td>
+            <td class="status">Passed</td>
+            <td>
+              Formatting, generated Worker bindings, strict TypeScript, zero-warning lint, OpenAPI,
+              migration rehearsal, coverage, dependency audit, source scan, build, and client-bundle
+              boundary via <code>npm run check</code>.
+            </td>
+          </tr>
+          <tr>
+            <td>Unit, integration, and contract behavior</td>
+            <td class="status">119 / 119 passed</td>
+            <td>35 test files; no skipped tests.</td>
+          </tr>
+          <tr>
+            <td>Coverage</td>
+            <td class="status">Thresholds passed</td>
+            <td>83.72% statements, 73.79% branches, 87.97% functions, and 86.21% lines.</td>
+          </tr>
+          <tr>
+            <td>Full browser matrix</td>
+            <td class="status">45 / 45 passed</td>
+            <td>
+              Chromium, Firefox, and WebKit: authentication, approvals, all authoring panels,
+              concurrency recovery, operations, preview, releases, rollback, cache revalidation, and
+              accessibility.
+            </td>
+          </tr>
+          <tr>
+            <td>Experience gate</td>
+            <td class="status">Passed</td>
+            <td>
+              Deterministic API performance plus 27 responsive, preview, overflow, and axe cases on
+              three browser engines and four viewport classes.
+            </td>
+          </tr>
+          <tr>
+            <td>Supply chain and secrets</td>
+            <td class="status">Passed</td>
+            <td>
+              <code>npm audit</code> found zero vulnerabilities. Source, built assets, and 14 Git
+              commits produced no secret findings.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Verified product boundaries</h2>
+      <ul>
+        <li>
+          First fixed GitHub identity bootstraps as Owner; other identities enter Pending Editor.
+        </li>
+        <li>Every capability is re-authorized from current server-side membership state.</li>
+        <li>
+          PointApp Staging and Production use immutable, signed, data-only manifest envelopes.
+        </li>
+        <li>
+          Production promotion reuses the exact Staging release and rollback re-points to a prior
+          signed release.
+        </li>
+        <li>Private drafts and unreferenced media stay outside anonymous delivery routes.</li>
+        <li>
+          The separate <code>PointCommunity/pointapp</code> repository was not accessed or changed.
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>

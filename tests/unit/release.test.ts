@@ -3,37 +3,25 @@ import { sampleManifest } from '../../src/content/manifest';
 import { ReleaseEnvelopeSchema } from '../../src/content/release';
 
 const envelope = {
-  envelopeVersion: 1,
+  contractVersion: 1,
+  releaseId: '01993dc8-4e00-7000-8000-000000000001',
+  revisionId: '01993dc8-4e00-7000-8000-000000000002',
+  manifestDigest: 'a'.repeat(64),
   releasedAt: '2026-09-07T12:00:00.000Z',
-  manifest: { ...sampleManifest, channel: 'staging' as const },
-  integrity: {
-    algorithm: 'ed25519-sha256' as const,
-    digest: 'a'.repeat(64),
-    signature: 'c2lnbmF0dXJl',
-    keyId: 'pointapp-content-2026-01',
-  },
+  compatibility: { manifestSchema: 1, minimumClientContract: 1 },
+  manifest: sampleManifest,
+  signing: { algorithm: 'Ed25519', signature: 'c2lnbmF0dXJl', keyId: 'pointapp-2026-01' },
 };
-
 describe('PointApp content release envelope', () => {
-  it('accepts a signed, non-draft content release', () => {
-    expect(ReleaseEnvelopeSchema.parse(envelope)).toEqual(envelope);
-  });
-
-  it('does not release draft manifests to installed apps', () => {
+  it('accepts a signed data-only content release', () =>
+    expect(ReleaseEnvelopeSchema.parse(envelope)).toEqual(envelope));
+  it('requires a complete SHA-256 digest', () =>
+    expect(() => ReleaseEnvelopeSchema.parse({ ...envelope, manifestDigest: 'abc' })).toThrow());
+  it('rejects executable or unknown fields', () =>
     expect(() =>
       ReleaseEnvelopeSchema.parse({
         ...envelope,
-        manifest: { ...sampleManifest, channel: 'draft' },
+        manifest: { ...sampleManifest, executable: 'code' },
       }),
-    ).toThrow(/Staging or Production/);
-  });
-
-  it('requires a complete SHA-256 digest', () => {
-    expect(() =>
-      ReleaseEnvelopeSchema.parse({
-        ...envelope,
-        integrity: { ...envelope.integrity, digest: 'abc' },
-      }),
-    ).toThrow();
-  });
+    ).toThrow());
 });

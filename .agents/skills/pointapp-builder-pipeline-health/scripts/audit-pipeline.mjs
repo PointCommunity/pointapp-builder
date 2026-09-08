@@ -13,6 +13,7 @@ const BOOTSTRAP_PRS = new Map([
   [7, 'codex/003-complete-builder'],
   [8, 'codex/oauth-live-fix'],
   [9, 'codex/oauth-live-fix'],
+  [10, 'codex/development-pipeline-bootstrap'],
 ]);
 const ACTIVE = new Set(['In Progress', 'In Review']);
 const REQUIRED_STATUS = ['Backlog', 'On Hold', 'In Progress', 'In Review', 'Done'];

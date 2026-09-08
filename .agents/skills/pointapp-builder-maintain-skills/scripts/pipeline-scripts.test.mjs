@@ -241,7 +241,7 @@ test('accepts one In Review Issue, an exact linked PR, and ignores Dependabot PR
   assert.equal(result.dependabotPrs.length, 1);
 });
 
-test('reports the exact pre-pipeline PRs #7 through #9 as bounded bootstrap exceptions', () => {
+test('reports the exact pre-pipeline PRs #7 through #10 as bounded bootstrap exceptions', () => {
   const result = auditPipelineSnapshot(
     baseSnapshot({
       prs: [
@@ -269,12 +269,20 @@ test('reports the exact pre-pipeline PRs #7 through #9 as bounded bootstrap exce
           isDraft: false,
           statusCheckRollup: [{ status: 'IN_PROGRESS', conclusion: '' }],
         },
+        {
+          number: 10,
+          body: 'Adopt the governed development pipeline.',
+          headRefName: 'codex/development-pipeline-bootstrap',
+          baseRefName: 'main',
+          isDraft: false,
+          statusCheckRollup: [{ status: 'IN_PROGRESS', conclusion: '' }],
+        },
       ],
     }),
   );
 
   assert.deepEqual(result.errors, []);
-  assert.equal(result.bootstrapPrs.length, 3);
+  assert.equal(result.bootstrapPrs.length, 4);
   assert.equal(result.pipelinePrs.length, 0);
   assert.ok(result.warnings.some((warning) => warning.includes('bootstrap exception PR #7')));
 });
@@ -284,7 +292,7 @@ test('rejects any unreferenced non-Dependabot PR outside the exact bootstrap exc
     baseSnapshot({
       prs: [
         {
-          number: 10,
+          number: 11,
           body: 'Untracked work.',
           headRefName: 'codex/untracked-work',
           baseRefName: 'main',

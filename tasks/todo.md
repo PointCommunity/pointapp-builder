@@ -16,7 +16,7 @@
   - Acceptance: eight separate PointApp workflow skills, five pinned shared skills, 13 regular-file Claude adapters, CLAUDE import, and GEMINI import exist.
   - Verify: skill validator and registry alignment.
 - [x] Task 6: Implement deterministic pipeline checks test-first
-  - Acceptance: valid Project/Issue/PR states pass; missing metadata, copied Canary text, bad labels, auto-close syntax, and ungoverned PRs fail; exact PRs #7 through #9 are the only bootstrap exceptions.
+  - Acceptance: valid Project/Issue/PR states pass; missing metadata, copied Canary text, bad labels, auto-close syntax, and ungoverned PRs fail; exact PRs #7 through #10 are the only bootstrap exceptions.
   - Verify: focused Node tests demonstrate red then green.
 - [x] Task 7: Align repository automation
   - Acceptance: package scripts, CI/security jobs, branch patterns, CODEOWNERS, Dependabot, pre-commit, lint, and Prettier cover the adopted pipeline.

@@ -70,9 +70,10 @@ requireText(
   policyPath,
 );
 requireText(policy, 'PR #7 on <code>codex/003-complete-builder</code>', policyPath);
-requireText(policy, 'PR #8 on', policyPath);
+requireText(policy, 'PRs #8 and #9 on', policyPath);
 requireText(policy, '<code>codex/oauth-live-fix</code>', policyPath);
-requireText(policy, 'PR #9', policyPath);
+requireText(policy, 'pipeline-adoption PR #10 on', policyPath);
+requireText(policy, '<code>codex/development-pipeline-bootstrap</code>', policyPath);
 requireText(
   policy,
   'PointApp Staging and Production remain separate immutable content channels',
@@ -84,8 +85,8 @@ requireText(agents, 'Never ask the PM to move a Project card', 'AGENTS.md');
 requireText(agents, 'It has no Builder staging or Canary environment', 'AGENTS.md');
 requireText(agents, 'deploy the exact clean `origin/main` revision', 'AGENTS.md');
 requireText(agents, 'PR #7 on `codex/003-complete-builder`', 'AGENTS.md');
-requireText(agents, 'PR #8 on `codex/oauth-live-fix`', 'AGENTS.md');
-requireText(agents, 'PR #9 on that same branch', 'AGENTS.md');
+requireText(agents, 'PRs #8 and #9 on `codex/oauth-live-fix`', 'AGENTS.md');
+requireText(agents, 'PR #10 on `codex/development-pipeline-bootstrap`', 'AGENTS.md');
 requireText(agents, 'PointApp Staging and Production are immutable content channels', 'AGENTS.md');
 forbidText(policy, 'PointSite', policyPath);
 

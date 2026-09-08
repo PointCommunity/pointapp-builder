@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AuthenticationError,
+  GitHubApiGateway,
   GitHubAuthenticator,
   GitHubSessionCodec,
   type GitHubIdentity,
@@ -37,6 +38,68 @@ function gateway(): GitHubIdentityGateway {
 }
 
 describe('GitHub App OAuth', () => {
+  it('exchanges the code with PKCE and revalidates the GitHub identity', async () => {
+    const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
+    const fetcher = async (input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push({ input, init });
+      if (requests.length === 1) {
+        return Response.json({ access_token: 'ghu_valid-user-access-token' });
+      }
+      return Response.json({
+        id: identity.id,
+        login: identity.login,
+        name: identity.displayName,
+        avatar_url: identity.avatarUrl,
+      });
+    };
+    const api = new GitHubApiGateway(config, fetcher as typeof fetch);
+
+    await expect(api.exchangeCode('temporary-code', 'pkce-verifier')).resolves.toEqual(identity);
+    expect(requests).toHaveLength(2);
+    expect(requests[0]?.input).toBe('https://github.com/login/oauth/access_token');
+    expect(requests[0]?.init?.headers).toEqual({
+      accept: 'application/json',
+      'content-type': 'application/json',
+    });
+    expect(JSON.parse(String(requests[0]?.init?.body))).toEqual({
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      code: 'temporary-code',
+      code_verifier: 'pkce-verifier',
+      redirect_uri: `${config.builderOrigin}/auth/callback`,
+    });
+    expect(requests[1]?.input).toBe('https://api.github.com/user');
+    expect(requests[1]?.init?.headers).toMatchObject({
+      authorization: 'Bearer ghu_valid-user-access-token',
+    });
+  });
+
+  it('turns an HTTP 200 OAuth error payload into a safe diagnostic problem', async () => {
+    const api = new GitHubApiGateway(config, (() =>
+      Promise.resolve(Response.json({ error: 'incorrect_client_credentials' }))) as typeof fetch);
+
+    await expect(api.exchangeCode('temporary-code', 'pkce-verifier')).rejects.toMatchObject({
+      status: 401,
+      code: 'GITHUB_OAUTH_EXCHANGE_REJECTED',
+      message: 'GitHub rejected the sign-in exchange',
+    });
+  });
+
+  it('rejects a malformed GitHub identity without exposing the upstream payload', async () => {
+    const responses = [
+      Response.json({ access_token: 'ghu_valid-user-access-token' }),
+      Response.json({ id: 'not-a-number', login: 'brimdor' }),
+    ];
+    const api = new GitHubApiGateway(config, (() =>
+      Promise.resolve(responses.shift() ?? Response.error())) as typeof fetch);
+
+    await expect(api.exchangeCode('temporary-code', 'pkce-verifier')).rejects.toMatchObject({
+      status: 401,
+      code: 'GITHUB_IDENTITY_INVALID',
+      message: 'GitHub returned an invalid identity',
+    });
+  });
+
   it('uses state and PKCE then issues a unique host-only secure session', async () => {
     const codec = new GitHubSessionCodec(config.sessionSecret);
     const authenticator = new GitHubAuthenticator(config, gateway(), codec);

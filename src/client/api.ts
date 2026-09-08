@@ -1,5 +1,6 @@
 import type { Capability, MembershipStatus, Role } from '../domain/access';
 import type { AppManifest } from '../content/manifest';
+import type { ReleaseEnvelope } from '../content/release';
 import type { MediaAsset } from '../server/repositories/media';
 import type { ReleaseView } from '../server/repositories/releases';
 
@@ -68,7 +69,14 @@ export interface ValidationView {
   issues: Array<{ code: string; path: string; message: string; severity: 'error' | 'warning' }>;
 }
 export interface OperationsView {
-  health: { database: string };
+  health: {
+    status: 'ok' | 'degraded';
+    service: 'pointapp-builder';
+    environment: string;
+    version: string;
+    checks: Record<string, 'ok' | 'unavailable'>;
+    time: string;
+  };
   channels: { staging: ReleaseView | null; production: ReleaseView | null };
   capacity: Record<string, number>;
 }
@@ -111,12 +119,19 @@ async function requestJson<T>(path: string, init: RequestInit = {}, retry = true
       title?: string;
       fields?: Record<string, string[]>;
     };
-    throw new ApiError(
+    const error = new ApiError(
       response.status,
       problem.code ?? 'REQUEST_FAILED',
       problem.detail ?? problem.title ?? 'The request failed',
       problem.fields,
     );
+    if (
+      typeof window !== 'undefined' &&
+      (response.status === 401 ||
+        ['MEMBERSHIP_PENDING', 'MEMBERSHIP_DISABLED'].includes(error.code))
+    )
+      window.dispatchEvent(new CustomEvent('pointapp:session-invalid'));
+    throw error;
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -163,6 +178,13 @@ export async function listRevisions(draftId: string) {
 export async function listMedia() {
   return requestJson<{ items: MediaAsset[]; nextCursor: null }>('/api/media');
 }
+let mediaOptionsRequest: ReturnType<typeof listMedia> | null = null;
+export function listMediaOptions() {
+  return (mediaOptionsRequest ??= listMedia());
+}
+export function invalidateMediaOptions() {
+  mediaOptionsRequest = null;
+}
 export async function createMedia(metadata: Record<string, unknown>, file?: File) {
   const form = new FormData();
   form.set('metadata', JSON.stringify(metadata));
@@ -189,6 +211,9 @@ export async function validateRelease(revisionId: string) {
 }
 export async function listReleases() {
   return requestJson<{ items: ReleaseView[]; nextCursor: null }>('/api/releases');
+}
+export async function loadStagingRelease() {
+  return requestJson<ReleaseEnvelope>('/api/releases/staging');
 }
 export async function publishStaging(revisionId: string) {
   return requestJson<ReleaseView>('/api/releases/staging', {
@@ -231,28 +256,16 @@ export interface MembershipUpdate {
 }
 
 export async function listMemberships(): Promise<MembershipPage> {
-  const response = await fetch('/api/memberships', {
-    headers: { accept: 'application/json' },
-    credentials: 'same-origin',
-  });
-  if (!response.ok) throw new Error('Access list could not be loaded');
-  return (await response.json()) as MembershipPage;
+  return requestJson<MembershipPage>('/api/memberships');
 }
 
 export async function updateMembership(
   githubUserId: string,
   input: MembershipUpdate,
 ): Promise<MembershipView> {
-  const response = await fetch(`/api/memberships/${encodeURIComponent(githubUserId)}`, {
+  return requestJson<MembershipView>(`/api/memberships/${encodeURIComponent(githubUserId)}`, {
     method: 'PATCH',
-    credentials: 'same-origin',
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/json',
-      'idempotency-key': crypto.randomUUID(),
-    },
+    headers: mutationHeaders(),
     body: JSON.stringify(input),
   });
-  if (!response.ok) throw new Error('Access change could not be saved');
-  return (await response.json()) as MembershipView;
 }

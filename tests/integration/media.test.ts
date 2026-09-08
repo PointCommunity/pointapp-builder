@@ -13,6 +13,24 @@ function png(width = 16, height = 16) {
   view.setUint32(20, height);
   return bytes;
 }
+function supportedImage(type: 'image/jpeg' | 'image/webp' | 'image/avif') {
+  const bytes = new Uint8Array(40);
+  const view = new DataView(bytes.buffer);
+  if (type === 'image/jpeg') {
+    bytes.set([0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 0, 16, 0, 16]);
+  } else if (type === 'image/webp') {
+    bytes.set(new TextEncoder().encode('RIFF'), 0);
+    bytes.set(new TextEncoder().encode('WEBPVP8X'), 8);
+    bytes[24] = 15;
+    bytes[27] = 15;
+  } else {
+    bytes.set(new TextEncoder().encode('ftypavif'), 4);
+    bytes.set(new TextEncoder().encode('ispe'), 16);
+    view.setUint32(20, 16);
+    view.setUint32(24, 16);
+  }
+  return bytes;
+}
 async function fixture() {
   const db = new SQLiteD1Database();
   db.applyMigrations();
@@ -61,7 +79,26 @@ describe('media library', () => {
         new File([png()], 'a.png', { type: 'image/png' }),
       ),
     ).rejects.toMatchObject({ code: 'CHECKSUM_MISMATCH' });
+    await expect(
+      create(
+        { kind: 'image', title: 'Spoofed', altText: 'Spoofed' },
+        new File([new Uint8Array(32)], 'fake.png', { type: 'image/png' }),
+      ),
+    ).rejects.toMatchObject({ code: 'IMAGE_DIMENSIONS_INVALID' });
   });
+  it.each(['image/jpeg', 'image/webp', 'image/avif'] as const)(
+    'accepts valid %s image headers',
+    async (type) => {
+      const { db, actor } = await fixture();
+      const asset = await createMedia(db, {
+        metadata: { kind: 'image', title: type, altText: 'Accessible image' },
+        file: new File([supportedImage(type)], `image.${type.split('/')[1]}`, { type }),
+        actor,
+        requestId: crypto.randomUUID(),
+      });
+      expect(asset).toMatchObject({ mimeType: type, width: 16, height: 16 });
+    },
+  );
   it('requires HTTPS source and captions for external audio/video metadata', async () => {
     const { db, actor } = await fixture();
     await expect(

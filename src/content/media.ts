@@ -29,24 +29,35 @@ export function imageDimensions(
   bytes: Uint8Array,
   mimeType: string,
 ): { width: number; height: number } | null {
-  if (mimeType === 'image/png' && bytes.length >= 24)
+  if (
+    mimeType === 'image/png' &&
+    bytes.length >= 24 &&
+    [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => bytes[index] === byte)
+  )
     return { width: readU32(bytes, 16), height: readU32(bytes, 20) };
   if (
     mimeType === 'image/webp' &&
     bytes.length >= 30 &&
+    new TextDecoder().decode(bytes.slice(0, 4)) === 'RIFF' &&
+    new TextDecoder().decode(bytes.slice(8, 12)) === 'WEBP' &&
     new TextDecoder().decode(bytes.slice(12, 16)) === 'VP8X'
   ) {
     const width = 1 + bytes[24] + (bytes[25] << 8) + (bytes[26] << 16);
     const height = 1 + bytes[27] + (bytes[28] << 8) + (bytes[29] << 16);
     return { width, height };
   }
-  if (mimeType === 'image/avif') {
+  if (
+    mimeType === 'image/avif' &&
+    bytes.length >= 16 &&
+    new TextDecoder().decode(bytes.slice(4, 8)) === 'ftyp' &&
+    ['avif', 'avis'].includes(new TextDecoder().decode(bytes.slice(8, 12)))
+  ) {
     for (let offset = 4; offset + 12 <= bytes.length; offset += 1) {
       if (new TextDecoder().decode(bytes.slice(offset, offset + 4)) === 'ispe')
         return { width: readU32(bytes, offset + 4), height: readU32(bytes, offset + 8) };
     }
   }
-  if (mimeType === 'image/jpeg') {
+  if (mimeType === 'image/jpeg' && bytes[0] === 0xff && bytes[1] === 0xd8) {
     let offset = 2;
     while (offset + 8 < bytes.length) {
       if (bytes[offset] !== 0xff) {

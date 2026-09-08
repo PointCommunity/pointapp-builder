@@ -32,6 +32,8 @@ export function DraftBar({
 }) {
   const [name, setName] = useState('PointApp');
   const [label, setLabel] = useState('Content update');
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
   if (loading)
     return (
       <section className="draft-bar" aria-label="Draft and revision controls">
@@ -89,15 +91,41 @@ export function DraftBar({
           <details>
             <summary>Draft actions</summary>
             <div className="draft-actions">
-              <button
-                type="button"
-                onClick={() => {
-                  const value = prompt('Draft name', draft.name);
-                  if (value) void onRename(value);
-                }}
-              >
-                Rename
-              </button>
+              {renaming ? (
+                <form
+                  className="inline-rename"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const value = renameValue.trim();
+                    if (!value) return;
+                    void onRename(value).then(() => setRenaming(false));
+                  }}
+                >
+                  <label>
+                    Draft name
+                    <input
+                      autoFocus
+                      maxLength={80}
+                      value={renameValue}
+                      onChange={(event) => setRenameValue(event.target.value)}
+                    />
+                  </label>
+                  <button type="submit">Save name</button>
+                  <button type="button" onClick={() => setRenaming(false)}>
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRenameValue(draft.name);
+                    setRenaming(true);
+                  }}
+                >
+                  Rename
+                </button>
+              )}
               <button type="button" onClick={() => void onDuplicate()}>
                 Duplicate
               </button>

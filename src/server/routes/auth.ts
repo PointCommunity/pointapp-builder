@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
 import { appendAuditEvent } from '../audit';
+import { resolveSession } from '../authorize';
 import {
   GitHubApiGateway,
   GitHubAuthenticator,
   GitHubSessionCodec,
   type GitHubIdentity,
 } from '../auth';
-import { resolveSession } from '../authorize';
 import { ProblemError } from '../problems';
 import { consumeRateLimit } from '../rate-limit';
 import { registerIdentity } from '../repositories/memberships';
@@ -93,7 +93,7 @@ export function createAuthRoutes(environment: ApiEnvironment, dependencies: Auth
     return completed.response;
   });
 
-  routes.post('/auth/logout', (context) => {
+  routes.post('/auth/logout', async (context) => {
     if (
       context.req.header('origin') !== environment.BUILDER_ORIGIN ||
       context.req.header('sec-fetch-site') !== 'same-origin'
@@ -102,9 +102,24 @@ export function createAuthRoutes(environment: ApiEnvironment, dependencies: Auth
     }
     if (!dependencies.sessions)
       throw new ProblemError(503, 'AUTH_UNAVAILABLE', 'Sign-out is unavailable');
+    const session = await resolveSession(context.req.raw, environment.DB, dependencies.sessions);
+    if (session.membership)
+      await appendAuditEvent(environment.DB, {
+        id: crypto.randomUUID(),
+        requestId: context.get('requestId'),
+        actor: session.membership,
+        action: 'auth.logout',
+        targetType: 'session',
+        targetId: session.membership.githubUserId,
+        outcome: 'succeeded',
+      });
     return new Response(null, {
       status: 204,
-      headers: { 'set-cookie': dependencies.sessions.clearSessionCookie() },
+      headers: {
+        'set-cookie': dependencies.sessions.clearSessionCookie(
+          new URL(environment.BUILDER_ORIGIN).protocol === 'https:',
+        ),
+      },
     });
   });
 
@@ -124,7 +139,21 @@ export function createAuthRoutes(environment: ApiEnvironment, dependencies: Auth
       displayName: login,
       avatarUrl: null,
     };
-    await registerIdentity(environment.DB, identity, environment.BOOTSTRAP_OWNER_GITHUB_ID);
+    const membership = await registerIdentity(
+      environment.DB,
+      identity,
+      environment.BOOTSTRAP_OWNER_GITHUB_ID,
+    );
+    await appendAuditEvent(environment.DB, {
+      id: crypto.randomUUID(),
+      requestId: context.get('requestId'),
+      actor: membership,
+      action: 'auth.login-local',
+      targetType: 'session',
+      targetId: membership.githubUserId,
+      outcome: 'succeeded',
+      metadata: { state: membership.status, role: membership.role },
+    });
     return dependencies.sessions.sessionResponse(identity, `${environment.BUILDER_ORIGIN}/`);
   });
 

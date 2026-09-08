@@ -118,23 +118,44 @@ export function NotificationsPanel({ manifest, onChange, readOnly }: ManifestPan
             </select>
           </label>
           {campaign.status === 'scheduled' && (
-            <label>
-              Schedule time
-              <input
-                type="datetime-local"
-                disabled={readOnly}
-                value={campaign.scheduledAt?.slice(0, 16) ?? ''}
-                onChange={(event) =>
-                  onChange(
-                    updateManifest(manifest, (next) => {
-                      next.campaigns[index].scheduledAt = event.target.value
-                        ? new Date(event.target.value).toISOString()
-                        : null;
-                    }),
-                  )
-                }
-              />
-            </label>
+            <>
+              <label>
+                Schedule time
+                <input
+                  type="datetime-local"
+                  disabled={readOnly}
+                  value={campaign.scheduledAt?.slice(0, 16) ?? ''}
+                  onChange={(event) =>
+                    onChange(
+                      updateManifest(manifest, (next) => {
+                        next.campaigns[index].scheduledAt = event.target.value
+                          ? new Date(event.target.value).toISOString()
+                          : null;
+                      }),
+                    )
+                  }
+                />
+              </label>
+              {campaign.scheduledAt && new Date(campaign.scheduledAt) <= new Date() ? (
+                <div className="validation-errors">
+                  <p>This scheduled time has passed.</p>
+                  <button
+                    disabled={readOnly}
+                    onClick={() =>
+                      onChange(
+                        updateManifest(manifest, (next) => {
+                          next.campaigns[index].status = 'ready';
+                          next.campaigns[index].scheduledAt = null;
+                        }),
+                      )
+                    }
+                    type="button"
+                  >
+                    Confirm delivery with the next content refresh
+                  </button>
+                </div>
+              ) : null}
+            </>
           )}
           <button
             disabled={readOnly}

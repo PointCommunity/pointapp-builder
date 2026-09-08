@@ -64,6 +64,7 @@ export function applySecurityHeaders(
   headers.set('cross-origin-resource-policy', 'same-origin');
   headers.set('permissions-policy', 'camera=(), geolocation=(), microphone=(), payment=(), usb=()');
   headers.set('referrer-policy', 'no-referrer');
+  headers.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
   headers.set('x-content-type-options', 'nosniff');
   headers.set('x-frame-options', 'DENY');
   return new Response(response.body, {

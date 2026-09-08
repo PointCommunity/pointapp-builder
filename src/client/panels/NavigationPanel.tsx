@@ -106,6 +106,22 @@ export function NavigationPanel({ manifest, onChange, readOnly }: ManifestPanelP
               Up
             </button>
             <button
+              disabled={readOnly || index === manifest.navigation.length - 1}
+              onClick={() =>
+                onChange(
+                  updateManifest(manifest, (next) => {
+                    [next.navigation[index + 1], next.navigation[index]] = [
+                      next.navigation[index],
+                      next.navigation[index + 1],
+                    ];
+                  }),
+                )
+              }
+              type="button"
+            >
+              Down
+            </button>
+            <button
               disabled={readOnly || manifest.navigation.length <= 2}
               onClick={() =>
                 onChange(updateManifest(manifest, (next) => next.navigation.splice(index, 1)))

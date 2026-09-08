@@ -1,5 +1,6 @@
 import { createElement, elementTypes, type AppElement } from '../../content/manifest';
 import { useState } from 'react';
+import { MediaSelect } from '../components/MediaSelect';
 import { newId, updateManifest, type ManifestPanelProps } from './types';
 
 function TextField({
@@ -27,9 +28,11 @@ function TextField({
 function ElementFields({
   element,
   change,
+  readOnly,
 }: {
   element: AppElement;
   change: (patch: Partial<AppElement>) => void;
+  readOnly: boolean;
 }) {
   if (element.type === 'divider')
     return <p className="muted">A visual divider has no content settings.</p>;
@@ -72,16 +75,38 @@ function ElementFields({
           value={element.actionDestination}
           onChange={(actionDestination) => change({ actionDestination })}
         />
+        <MediaSelect
+          label="Hero image"
+          kind="image"
+          value={element.imageMediaId}
+          optional
+          disabled={readOnly}
+          onChange={(imageMediaId) => change({ imageMediaId })}
+        />
       </>
     );
   if (element.type === 'rich-text')
     return (
-      <TextField
-        label="Text"
-        multiline
-        value={element.body}
-        onChange={(body) => change({ body })}
-      />
+      <>
+        <TextField
+          label="Text"
+          multiline
+          value={element.body}
+          onChange={(body) => change({ body })}
+        />
+        <label>
+          Text style
+          <select
+            value={element.style}
+            disabled={readOnly}
+            onChange={(event) => change({ style: event.target.value } as Partial<AppElement>)}
+          >
+            <option>body</option>
+            <option>lead</option>
+            <option>caption</option>
+          </select>
+        </label>
+      </>
     );
   if (element.type === 'action')
     return (
@@ -92,26 +117,55 @@ function ElementFields({
           value={element.destination}
           onChange={(destination) => change({ destination })}
         />
+        <label>
+          Appearance
+          <select
+            value={element.appearance}
+            disabled={readOnly}
+            onChange={(event) => change({ appearance: event.target.value } as Partial<AppElement>)}
+          >
+            <option>primary</option>
+            <option>secondary</option>
+            <option>quiet</option>
+          </select>
+        </label>
       </>
     );
   if (element.type === 'image')
     return (
       <>
-        <TextField
-          label="Media ID"
+        <MediaSelect
+          label="Image"
+          kind="image"
           value={element.mediaId}
-          onChange={(mediaId) => change({ mediaId } as Partial<AppElement>)}
+          disabled={readOnly}
+          onChange={(mediaId) => mediaId && change({ mediaId } as Partial<AppElement>)}
         />
         <TextField label="Alt text" value={element.alt} onChange={(alt) => change({ alt })} />
+        <label>
+          Aspect ratio
+          <select
+            value={element.aspect}
+            disabled={readOnly}
+            onChange={(event) => change({ aspect: event.target.value } as Partial<AppElement>)}
+          >
+            <option>square</option>
+            <option>portrait</option>
+            <option>landscape</option>
+            <option>wide</option>
+          </select>
+        </label>
       </>
     );
   if (element.type === 'video')
     return (
       <>
-        <TextField
-          label="Media ID"
+        <MediaSelect
+          label="Video"
+          kind="video"
           value={element.mediaId}
-          onChange={(mediaId) => change({ mediaId } as Partial<AppElement>)}
+          disabled={readOnly}
+          onChange={(mediaId) => mediaId && change({ mediaId } as Partial<AppElement>)}
         />
         <TextField label="Title" value={element.title} onChange={(title) => change({ title })} />
       </>
@@ -119,10 +173,12 @@ function ElementFields({
   if (element.type === 'audio')
     return (
       <>
-        <TextField
-          label="Media ID"
+        <MediaSelect
+          label="Audio"
+          kind="audio"
           value={element.mediaId}
-          onChange={(mediaId) => change({ mediaId } as Partial<AppElement>)}
+          disabled={readOnly}
+          onChange={(mediaId) => mediaId && change({ mediaId } as Partial<AppElement>)}
         />
         <TextField label="Title" value={element.title} onChange={(title) => change({ title })} />
         <TextField
@@ -140,24 +196,103 @@ function ElementFields({
           value={element.title}
           onChange={(title) => change({ title })}
         />
-        <TextField
-          label="First card title"
-          value={element.cards[0].title}
-          onChange={(title) =>
+        {element.cards.map((card, index) => (
+          <fieldset key={card.id}>
+            <legend>Card {index + 1}</legend>
+            <TextField
+              label="Card title"
+              value={card.title}
+              onChange={(title) =>
+                change({
+                  cards: element.cards.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, title } : item,
+                  ),
+                } as Partial<AppElement>)
+              }
+            />
+            <TextField
+              label="Card body"
+              multiline
+              value={card.body}
+              onChange={(body) =>
+                change({
+                  cards: element.cards.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, body } : item,
+                  ),
+                } as Partial<AppElement>)
+              }
+            />
+            <TextField
+              label="Card destination"
+              value={card.destination}
+              onChange={(destination) =>
+                change({
+                  cards: element.cards.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, destination } : item,
+                  ),
+                } as Partial<AppElement>)
+              }
+            />
+            <MediaSelect
+              label="Card image"
+              kind="image"
+              value={card.imageMediaId}
+              optional
+              disabled={readOnly}
+              onChange={(imageMediaId) =>
+                change({
+                  cards: element.cards.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, imageMediaId } : item,
+                  ),
+                } as Partial<AppElement>)
+              }
+            />
+            <div className="row-actions">
+              <button
+                type="button"
+                disabled={readOnly || index === 0}
+                onClick={() => {
+                  const cards = structuredClone(element.cards);
+                  [cards[index - 1], cards[index]] = [cards[index], cards[index - 1]];
+                  change({ cards } as Partial<AppElement>);
+                }}
+              >
+                Move card up
+              </button>
+              <button
+                type="button"
+                disabled={readOnly || element.cards.length === 1}
+                onClick={() =>
+                  change({
+                    cards: element.cards.filter((_, itemIndex) => itemIndex !== index),
+                  } as Partial<AppElement>)
+                }
+              >
+                Delete card
+              </button>
+            </div>
+          </fieldset>
+        ))}
+        <button
+          type="button"
+          disabled={readOnly || element.cards.length >= 20}
+          onClick={() =>
             change({
-              cards: [{ ...element.cards[0], title }, ...element.cards.slice(1)],
+              cards: [
+                ...element.cards,
+                {
+                  id: newId('card'),
+                  title: 'New card',
+                  body: '',
+                  destination: '/',
+                  imageMediaId: null,
+                },
+              ],
             } as Partial<AppElement>)
           }
-        />
-        <TextField
-          label="First card destination"
-          value={element.cards[0].destination}
-          onChange={(destination) =>
-            change({
-              cards: [{ ...element.cards[0], destination }, ...element.cards.slice(1)],
-            } as Partial<AppElement>)
-          }
-        />
+        >
+          Add card
+        </button>
       </>
     );
   if (element.type === 'event-list')
@@ -169,6 +304,19 @@ function ElementFields({
           value={element.sourceUrl}
           onChange={(sourceUrl) => change({ sourceUrl })}
         />
+        <label>
+          Event limit
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={element.limit}
+            disabled={readOnly}
+            onChange={(event) =>
+              change({ limit: Number(event.target.value) } as Partial<AppElement>)
+            }
+          />
+        </label>
       </>
     );
   if (element.type === 'scripture')
@@ -196,6 +344,19 @@ function ElementFields({
     <>
       <TextField label="Title" value={element.title} onChange={(title) => change({ title })} />
       <TextField label="HTTPS URL" value={element.url} onChange={(url) => change({ url })} />
+      <label>
+        Preview height
+        <input
+          type="number"
+          min={180}
+          max={900}
+          value={element.height}
+          disabled={readOnly}
+          onChange={(event) =>
+            change({ height: Number(event.target.value) } as Partial<AppElement>)
+          }
+        />
+      </label>
     </>
   );
 }
@@ -291,6 +452,30 @@ export function ContentPanel({ manifest, onChange, readOnly }: ManifestPanelProp
                 }
               />
               Visible
+            </label>
+            <label>
+              Screen audiences
+              <select
+                multiple
+                value={screen.audienceIds}
+                disabled={readOnly}
+                onChange={(event) =>
+                  onChange(
+                    updateManifest(manifest, (next) => {
+                      next.screens[index].audienceIds = Array.from(
+                        event.target.selectedOptions,
+                        (option) => option.value,
+                      );
+                    }),
+                  )
+                }
+              >
+                {manifest.audiences.map((audience) => (
+                  <option key={audience.id} value={audience.id}>
+                    {audience.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <div className="row-actions">
               <button
@@ -407,19 +592,27 @@ export function ContentPanel({ manifest, onChange, readOnly }: ManifestPanelProp
                   {index + 1}. {element.type}
                 </span>
               </summary>
-              <ElementFields
-                element={element}
-                change={(patch) =>
-                  mutate((screen) => {
-                    screen.elements[index] = { ...screen.elements[index], ...patch } as AppElement;
-                  })
-                }
-              />
+              <fieldset className="element-fields" disabled={readOnly}>
+                <legend className="visually-hidden">{element.type} settings</legend>
+                <ElementFields
+                  element={element}
+                  readOnly={readOnly ?? false}
+                  change={(patch) =>
+                    mutate((screen) => {
+                      screen.elements[index] = {
+                        ...screen.elements[index],
+                        ...patch,
+                      } as AppElement;
+                    })
+                  }
+                />
+              </fieldset>
               <label>
                 Audience visibility
                 <select
                   multiple
                   value={element.audienceIds}
+                  disabled={readOnly}
                   onChange={(event) =>
                     mutate((screen) => {
                       screen.elements[index].audienceIds = Array.from(
@@ -432,6 +625,29 @@ export function ContentPanel({ manifest, onChange, readOnly }: ManifestPanelProp
                   {manifest.audiences.map((audience) => (
                     <option key={audience.id} value={audience.id}>
                       {audience.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Move to screen
+                <select
+                  value={active.id}
+                  disabled={readOnly || manifest.screens.length === 1}
+                  onChange={(event) => {
+                    const targetId = event.target.value;
+                    if (targetId === active.id) return;
+                    onChange(
+                      updateManifest(manifest, (next) => {
+                        const [moved] = next.screens[activeIndex].elements.splice(index, 1);
+                        next.screens.find((screen) => screen.id === targetId)?.elements.push(moved);
+                      }),
+                    );
+                  }}
+                >
+                  {manifest.screens.map((screen) => (
+                    <option key={screen.id} value={screen.id}>
+                      {screen.title}
                     </option>
                   ))}
                 </select>
@@ -472,6 +688,14 @@ export function ContentPanel({ manifest, onChange, readOnly }: ManifestPanelProp
                       screen.elements.splice(index + 1, 0, {
                         ...structuredClone(element),
                         id: newId(element.type),
+                        ...(element.type === 'card-list'
+                          ? {
+                              cards: element.cards.map((card) => ({
+                                ...card,
+                                id: newId('card'),
+                              })),
+                            }
+                          : {}),
                       }),
                     )
                   }

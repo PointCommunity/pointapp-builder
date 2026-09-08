@@ -24,10 +24,23 @@ export async function signerFromEnvironment(
   publicJwk: string,
 ): Promise<ReleaseSigner> {
   try {
+    const parsedPrivate = JSON.parse(privateJwk) as JsonWebKey;
+    const parsedPublic = JSON.parse(publicJwk) as JsonWebKey;
+    if (
+      parsedPrivate.kty !== 'OKP' ||
+      parsedPrivate.crv !== 'Ed25519' ||
+      !parsedPrivate.d ||
+      !parsedPrivate.x ||
+      parsedPublic.kty !== 'OKP' ||
+      parsedPublic.crv !== 'Ed25519' ||
+      parsedPublic.x !== parsedPrivate.x ||
+      parsedPublic.d
+    )
+      throw new Error('Invalid Ed25519 signing pair');
     return {
       keyId,
-      privateKey: await importPrivateJwk(JSON.parse(privateJwk) as JsonWebKey),
-      publicJwk: JSON.parse(publicJwk) as JsonWebKey,
+      privateKey: await importPrivateJwk(parsedPrivate),
+      publicJwk: parsedPublic,
     };
   } catch {
     throw new ProblemError(503, 'SIGNING_UNAVAILABLE', 'Release signing is unavailable');

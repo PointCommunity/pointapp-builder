@@ -9,9 +9,11 @@
   --panel: #111820;
   --panel-high: #17212c;
   --line: #273441;
+  --border-strong: #526374;
   --muted: #93a3b2;
   --accent: #69d4c5;
   --accent-soft: #183d3a;
+  --shadow-lg: 0 24px 72px rgb(0 0 0 / 48%);
 }
 
 * {
@@ -137,6 +139,10 @@ summary {
   font:
     800 1rem/1 'Manrope',
     sans-serif;
+}
+
+.mobile-mark--image {
+  object-fit: contain;
 }
 .brand-mark {
   width: 38px;
@@ -352,6 +358,50 @@ summary {
   background: #152029;
   border-bottom: 1px solid var(--line);
   font-size: 0.78rem;
+}
+
+.global-validation,
+.conflict-banner {
+  margin: 0;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+}
+
+.conflict-banner {
+  border: 1px solid #d7a44b;
+  background: #2b2112;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 72%);
+}
+
+.confirm-dialog {
+  width: min(30rem, 100%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  background: var(--panel);
+  box-shadow: var(--shadow-lg);
+}
+
+.inline-rename {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.element-fields {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
 }
 .builder-nav {
   padding: 18px 12px;
@@ -641,8 +691,9 @@ summary {
 }
 .mobile-content {
   overflow: auto;
-  padding: 14px;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
   scrollbar-width: thin;
+  overscroll-behavior: contain;
 }
 .app-hero {
   position: relative;
@@ -767,6 +818,7 @@ summary {
   justify-content: space-around;
   border-top: 1px solid #dfddd7;
   background: var(--app-surface, #111923);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .mobile-tabs button {
   min-width: 56px;

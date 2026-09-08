@@ -30,11 +30,16 @@ Domain and server behavior is written test-first. Before review or deployment, f
 
 Unknown user-owned changes are never reset, cleaned, stashed, overwritten, or committed. External mutations stay within explicit authorization. GitHub App installation changes preserve existing permissions unless the user approves an expansion. Destructive data or schema recovery requires explicit approval.
 
+### VIII. Complete authoring and recoverable operations
+
+Every supported manifest field is editable through persistent controls and represented in the phone/tablet preview. Media is private until referenced by a published manifest. Concurrent saves must preserve the rejected work as a bounded recovery draft or offer an explicit reload. Owners receive redacted operational health, capacity, audit, and rollback views without exposing secrets or payload bodies.
+
 ## Quality gates
 
 - Node.js 22 or later and strict TypeScript.
 - Testable requirements and acceptance scenarios for every user-facing flow.
 - WCAG 2.2 AA target with phone, tablet, and desktop browser evidence.
+- Chromium, Firefox, and WebKit must pass the protected authoring and release journeys; local HTTP fixtures may use development-only cookies, while Production uses `__Host-` Secure cookies.
 - All tests pass; coverage thresholds cannot decrease to manufacture a pass.
 - Exact local `HEAD`, `origin/main`, GitHub Quality SHA, and deployed source must agree.
 - Authentication or publishing remains fail-closed when required configuration is absent.
@@ -45,8 +50,9 @@ Repository `AGENTS.md` overrides this workflow constitution. Amendments require 
 
 ## Version history
 
-| Version | Date       | Change                                      |
-| ------- | ---------- | ------------------------------------------- |
-| 1.0.0   | 2026-09-07 | Initial PointApp Builder project governance |
+| Version | Date       | Change                                                                     |
+| ------- | ---------- | -------------------------------------------------------------------------- |
+| 1.1.0   | 2026-09-07 | Add complete authoring, recovery, operations, and cross-browser invariants |
+| 1.0.0   | 2026-09-07 | Initial PointApp Builder project governance                                |
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-07 | **Last amended**: 2026-09-07
+**Version**: 1.1.0 | **Ratified**: 2026-09-07 | **Last amended**: 2026-09-07

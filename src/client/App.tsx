@@ -16,12 +16,14 @@ import {
 } from '@phosphor-icons/react';
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { can } from '../domain/access';
-import { sampleManifest, type AppManifest } from '../content/manifest';
+import { AppManifestSchema, sampleManifest, type AppManifest } from '../content/manifest';
 import { AppPreview, type PreviewDevice } from '../preview/AppPreview';
 import {
   createDraft,
+  ApiError,
   listDrafts,
   listRevisions,
+  loadStagingRelease,
   loadSession,
   saveRevision,
   signOut,
@@ -31,6 +33,8 @@ import {
   type SessionView,
 } from './api';
 import { DraftBar } from './components/DraftBar';
+import { ConfirmDialog } from './components/feedback/ConfirmDialog';
+import { ValidationSummary } from './components/feedback/ValidationSummary';
 import { SessionGate } from './components/SessionGate';
 import { AccessPanel } from './panels/AccessPanel';
 import { AudiencePanel } from './panels/AudiencePanel';
@@ -87,6 +91,11 @@ function Workspace({
   const [revisions, setRevisions] = useState<RevisionView[]>([]);
   const [message, setMessage] = useState('');
   const [audienceId, setAudienceId] = useState<string | null>(null);
+  const [validationIssues, setValidationIssues] = useState<string[]>([]);
+  const [conflict, setConflict] = useState(false);
+  const [pendingDraftId, setPendingDraftId] = useState<string | null>(null);
+  const [previewSource, setPreviewSource] = useState<'draft' | 'staging'>('draft');
+  const [stagingManifest, setStagingManifest] = useState<AppManifest | null>(null);
   const membership = session.membership;
 
   const refreshDrafts = async (selectId?: string) => {
@@ -151,10 +160,14 @@ function Workspace({
   const changeManifest = (next: AppManifest) => {
     setManifest(next);
     setDirty(true);
+    setValidationIssues([]);
     setMessage('Unsaved changes');
   };
   const selectDraft = async (id: string) => {
-    if (dirty && !confirm('Discard unsaved changes and switch drafts?')) return;
+    if (dirty) {
+      setPendingDraftId(id);
+      return;
+    }
     await refreshDrafts(id);
   };
   const create = async (name: string, duplicateRevisionId?: string) => {
@@ -169,14 +182,51 @@ function Workspace({
   };
   const save = async (label: string) => {
     if (!draft) return;
+    const parsed = AppManifestSchema.safeParse(manifest);
+    if (!parsed.success) {
+      setValidationIssues(
+        parsed.error.issues
+          .slice(0, 12)
+          .map((issue) => `${issue.path.join('.') || 'manifest'}: ${issue.message}`),
+      );
+      setMessage('The draft has validation errors. No revision was saved.');
+      return;
+    }
     setSaving(true);
     setMessage('');
     try {
-      const saved = await saveRevision(draft, manifest, label);
+      const saved = await saveRevision(draft, parsed.data, label);
       await refreshDrafts(saved.id);
+      setConflict(false);
+      setValidationIssues([]);
       setMessage(`Revision ${saved.currentRevision.sequence} saved.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Save failed.');
+      if (error instanceof ApiError && error.code === 'STALE_DRAFT_PARENT') {
+        setConflict(true);
+        setMessage('A newer revision exists. Your unsaved changes are still preserved here.');
+      } else {
+        setMessage(error instanceof Error ? error.message : 'Save failed.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+  const preserveConflictAsCopy = async () => {
+    if (!draft) return;
+    setSaving(true);
+    try {
+      const latest = (await listDrafts(true)).items.find((item) => item.id === draft.id);
+      const suffix = ' recovered';
+      const copy = await createDraft(
+        `${draft.name.slice(0, 80 - suffix.length)}${suffix}`,
+        latest?.currentRevision.id ?? draft.currentRevision.id,
+      );
+      const saved = await saveRevision(copy, manifest, 'Recovered concurrent changes');
+      await refreshDrafts(saved.id);
+      setConflict(false);
+      setMessage('Unsaved changes were preserved in a recovered draft.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Recovery copy could not be created.');
     } finally {
       setSaving(false);
     }
@@ -192,6 +242,8 @@ function Workspace({
     }
   };
   const readOnly = !can(membership, 'draft:write') || draft?.state === 'archived';
+  const previewManifest =
+    previewSource === 'staging' && stagingManifest ? stagingManifest : manifest;
 
   let inspector: React.ReactNode;
   const props = { manifest, onChange: changeManifest, readOnly };
@@ -260,7 +312,14 @@ function Workspace({
         revisions={revisions}
         onSelect={(id) => void selectDraft(id)}
         onCreate={(name) => create(name)}
-        onDuplicate={() => create(`${draft?.name ?? 'Draft'} copy`, draft?.currentRevision.id)}
+        onDuplicate={() => {
+          const suffix = ' copy';
+          const source = draft?.name ?? 'Draft';
+          return create(
+            `${source.slice(0, 80 - suffix.length)}${suffix}`,
+            draft?.currentRevision.id,
+          );
+        }}
         onSave={save}
         onRename={(name) => mutateDraft({ name })}
         onArchive={() => mutateDraft({ state: 'archived' })}
@@ -271,6 +330,32 @@ function Workspace({
           {message}
         </p>
       )}
+      <ValidationSummary issues={validationIssues} />
+      {conflict ? (
+        <section className="conflict-banner" role="alert">
+          <strong>Concurrent edit detected</strong>
+          <p>Keep this version as a new draft, or reload the latest saved revision.</p>
+          <div className="row-actions">
+            <button
+              className="button button--primary"
+              disabled={saving}
+              onClick={() => void preserveConflictAsCopy()}
+              type="button"
+            >
+              Preserve mine as a new draft
+            </button>
+            <button
+              disabled={saving}
+              onClick={() => {
+                void refreshDrafts(draft?.id).then(() => setConflict(false));
+              }}
+              type="button"
+            >
+              Reload latest revision
+            </button>
+          </div>
+        </section>
+      ) : null}
       <div className="workspace">
         <nav className="builder-nav" aria-label="Builder panels">
           {(['Build', 'Govern'] as const).map((group) => (
@@ -299,10 +384,42 @@ function Workspace({
         <main className="stage" id="main-content">
           <div className="stage-toolbar">
             <div>
-              <p>PointApp staging preview</p>
-              <h1>{manifest.screens[0]?.title ?? 'PointApp'}</h1>
+              <p>{previewSource === 'staging' ? 'Exact PointApp Staging' : 'Draft preview'}</p>
+              <h1>{previewManifest.screens[0]?.title ?? 'PointApp'}</h1>
             </div>
             <div className="preview-controls">
+              <div className="device-toggle" aria-label="Preview source">
+                <button
+                  aria-pressed={previewSource === 'draft'}
+                  onClick={() => setPreviewSource('draft')}
+                  type="button"
+                >
+                  Draft
+                </button>
+                <button
+                  aria-pressed={previewSource === 'staging'}
+                  onClick={() => {
+                    void loadStagingRelease()
+                      .then((release) => {
+                        setStagingManifest(release.manifest);
+                        setPreviewSource('staging');
+                        setMessage(
+                          `Previewing signed Staging ${release.manifestDigest.slice(0, 12)}.`,
+                        );
+                      })
+                      .catch((error) =>
+                        setMessage(
+                          error instanceof Error
+                            ? error.message
+                            : 'Staging preview is unavailable.',
+                        ),
+                      );
+                  }}
+                  type="button"
+                >
+                  Staging
+                </button>
+              </div>
               <label>
                 Audience
                 <select
@@ -310,7 +427,7 @@ function Workspace({
                   onChange={(event) => setAudienceId(event.target.value || null)}
                 >
                   <option value="">Everyone</option>
-                  {manifest.audiences.map((audience) => (
+                  {previewManifest.audiences.map((audience) => (
                     <option key={audience.id} value={audience.id}>
                       {audience.name}
                     </option>
@@ -338,7 +455,7 @@ function Workspace({
             </div>
           </div>
           <div className="canvas-grid" aria-hidden="true" />
-          <AppPreview device={device} manifest={manifest} audienceId={audienceId} />
+          <AppPreview device={device} manifest={previewManifest} audienceId={audienceId} />
           <div className="canvas-caption">
             <Megaphone size={16} /> Same manifest contract for this preview and installed apps
           </div>
@@ -360,6 +477,19 @@ function Workspace({
           )}
         </aside>
       </div>
+      {pendingDraftId ? (
+        <ConfirmDialog
+          title="Discard unsaved changes?"
+          message="Switching drafts will replace the edits currently shown in this workspace."
+          confirmLabel="Discard and switch"
+          onCancel={() => setPendingDraftId(null)}
+          onConfirm={() => {
+            const id = pendingDraftId;
+            setPendingDraftId(null);
+            void refreshDrafts(id);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -369,10 +499,16 @@ export function App({ initialSession }: { initialSession?: SessionView } = {}) {
   useEffect(() => {
     if (initialSession) return;
     const controller = new AbortController();
-    void loadSession(controller.signal)
-      .then(setSession)
-      .catch(() => setSession({ state: 'unavailable', membership: null, capabilities: [] }));
-    return () => controller.abort();
+    const refresh = () =>
+      loadSession(controller.signal)
+        .then(setSession)
+        .catch(() => setSession({ state: 'unavailable', membership: null, capabilities: [] }));
+    void refresh();
+    window.addEventListener('pointapp:session-invalid', refresh);
+    return () => {
+      window.removeEventListener('pointapp:session-invalid', refresh);
+      controller.abort();
+    };
   }, [initialSession]);
   return (
     <SessionGate session={session}>

@@ -1,4 +1,5 @@
 import { updateManifest, type ManifestPanelProps } from './types';
+import { MediaSelect } from '../components/MediaSelect';
 export function BrandingPanel({ manifest, onChange, readOnly }: ManifestPanelProps) {
   const setApp = (key: keyof typeof manifest.app, value: string) =>
     onChange(
@@ -40,6 +41,20 @@ export function BrandingPanel({ manifest, onChange, readOnly }: ManifestPanelPro
           onChange={(event) => setApp('tagline', event.target.value)}
         />
       </label>
+      <MediaSelect
+        label="App logo"
+        kind="image"
+        value={manifest.theme.logoMediaId}
+        optional
+        disabled={readOnly}
+        onChange={(logoMediaId) =>
+          onChange(
+            updateManifest(manifest, (next) => {
+              next.theme.logoMediaId = logoMediaId;
+            }),
+          )
+        }
+      />
       <div className="color-grid">
         {colors.map((color) => (
           <label key={color}>

@@ -19,6 +19,7 @@ function Element({ element }: { element: AppElement }) {
     case 'hero':
       return (
         <section className="app-hero">
+          {element.imageMediaId ? <img src={`/api/media/${element.imageMediaId}`} alt="" /> : null}
           {element.eyebrow && <p className="app-eyebrow">{element.eyebrow}</p>}
           <h2>{element.title}</h2>
           {element.body && <p>{element.body}</p>}
@@ -34,14 +35,26 @@ function Element({ element }: { element: AppElement }) {
         </button>
       );
     case 'image':
-      return <div className={`app-media app-media--${element.aspect}`}>Image · {element.alt}</div>;
+      return (
+        <img
+          className={`app-media app-media--${element.aspect}`}
+          src={`/api/media/${element.mediaId}`}
+          alt={element.alt}
+        />
+      );
     case 'video':
-      return <div className="app-media">▶ {element.title}</div>;
+      return (
+        <div className="app-media">
+          ▶ {element.title}
+          <small>Ready media · {element.mediaId.slice(0, 8)}</small>
+        </div>
+      );
     case 'audio':
       return (
         <div className="app-audio">
           ♪ <strong>{element.title}</strong>
           {element.speaker && <span>{element.speaker}</span>}
+          <small>Ready media · {element.mediaId.slice(0, 8)}</small>
         </div>
       );
     case 'card-list':
@@ -51,6 +64,7 @@ function Element({ element }: { element: AppElement }) {
           <div className="app-cards">
             {element.cards.map((card) => (
               <article key={card.id}>
+                {card.imageMediaId ? <img src={`/api/media/${card.imageMediaId}`} alt="" /> : null}
                 <strong>{card.title}</strong>
                 <p>{card.body}</p>
               </article>
@@ -130,9 +144,17 @@ export function AppPreview({
         }
       >
         <header className="mobile-header">
-          <span className="mobile-mark" aria-hidden="true">
-            P
-          </span>
+          {manifest.theme.logoMediaId ? (
+            <img
+              className="mobile-mark mobile-mark--image"
+              src={`/api/media/${manifest.theme.logoMediaId}`}
+              alt={`${manifest.app.name} logo`}
+            />
+          ) : (
+            <span className="mobile-mark" aria-hidden="true">
+              P
+            </span>
+          )}
           <strong>{manifest.app.shortName}</strong>
           <span className="mobile-avatar" aria-hidden="true">
             C

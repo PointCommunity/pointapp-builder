@@ -8,6 +8,9 @@ import { createReleaseRoutes } from './routes/releases';
 import { createPublicContentRoutes } from './routes/public-content';
 import { createOperationsRoutes } from './routes/operations';
 import { applySecurityHeaders } from './security';
+import { readHealth } from './services/operations';
+import { resolveSession } from './authorize';
+import { appendAuditEvent } from './audit';
 
 export interface ApiEnvironment {
   DB: D1Database;
@@ -29,15 +32,6 @@ export interface ApiEnvironment {
 
 export type ApiVariables = { requestId: string };
 
-async function databaseStatus(database: D1Database): Promise<'ok' | 'unavailable'> {
-  try {
-    const result = await database.prepare('SELECT 1 AS ok').first<{ ok: number }>();
-    return result?.ok === 1 ? 'ok' : 'unavailable';
-  } catch {
-    return 'unavailable';
-  }
-}
-
 export function createServerApp(environment: ApiEnvironment, providedAuth?: AuthDependencies) {
   const app = new Hono<{ Variables: ApiVariables }>();
   const auth = providedAuth ?? createAuthDependencies(environment);
@@ -51,23 +45,8 @@ export function createServerApp(environment: ApiEnvironment, providedAuth?: Auth
   });
 
   app.get('/api/health', async (context) => {
-    const database = await databaseStatus(environment.DB);
-    const status = database === 'ok' ? 'ok' : 'degraded';
-    return context.json(
-      {
-        status,
-        service: 'pointapp-builder',
-        environment: environment.ENVIRONMENT,
-        version: environment.APP_VERSION,
-        checks: {
-          database,
-          authentication: environment.AUTHENTICATION_ENABLED === 'true' ? 'ok' : 'unavailable',
-          publishing: environment.PUBLISHING_ENABLED === 'true' ? 'ok' : 'unavailable',
-        },
-        time: new Date().toISOString(),
-      },
-      status === 'ok' ? 200 : 503,
-    );
+    const health = await readHealth(environment);
+    return context.json(health, health.status === 'ok' ? 200 : 503);
   });
 
   app.all('/api/health', (context) => {
@@ -91,12 +70,44 @@ export function createServerApp(environment: ApiEnvironment, providedAuth?: Auth
     throw new ProblemError(404, 'NOT_FOUND', 'The requested operation does not exist');
   });
 
-  app.onError((error, context) => {
+  app.onError(async (error, context) => {
     const requestId = context.get('requestId') || crypto.randomUUID();
-    if (toProblemError(error).status === 500) {
+    const problem = toProblemError(error);
+    if (problem.status === 500) {
       console.error(JSON.stringify({ event: 'unexpected_request_error', requestId }));
+      if (environment.ENVIRONMENT !== 'production') console.error(error);
     }
-    const response = applySecurityHeaders(problemResponse(error, requestId));
+    const path = new URL(context.req.url).pathname;
+    const mutation =
+      !['GET', 'HEAD', 'OPTIONS'].includes(context.req.method) || path.startsWith('/auth/');
+    if (mutation) {
+      try {
+        const session = await resolveSession(context.req.raw, environment.DB, auth.sessions);
+        const family = path.startsWith('/auth/')
+          ? 'auth'
+          : path.startsWith('/api/memberships')
+            ? 'membership'
+            : path.startsWith('/api/drafts')
+              ? 'draft'
+              : path.startsWith('/api/media')
+                ? 'media'
+                : path.startsWith('/api/releases')
+                  ? 'release'
+                  : 'security';
+        await appendAuditEvent(environment.DB, {
+          id: crypto.randomUUID(),
+          requestId,
+          actor: session.membership ?? undefined,
+          action: `${family}.request`,
+          targetType: family,
+          outcome: problem.status === 401 || problem.status === 403 ? 'denied' : 'failed',
+          reason: problem.code,
+        });
+      } catch {
+        // Audit failure must not replace the original safe API problem.
+      }
+    }
+    const response = applySecurityHeaders(problemResponse(problem, requestId));
     response.headers.set('x-request-id', requestId);
     return response;
   });

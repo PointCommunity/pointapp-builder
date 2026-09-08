@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { PageLimitSchema } from '../../domain/primitives';
 import { requireActiveMembership } from '../authorize';
 import { listAuditEvents, operationsSnapshot } from '../repositories/operations';
+import { readHealth } from '../services/operations';
 import type { ApiEnvironment, ApiVariables } from '../app';
 import type { AuthDependencies } from './auth';
 
@@ -19,7 +20,10 @@ export function createOperationsRoutes(environment: ApiEnvironment, auth: AuthDe
       auth.sessions,
       'operations:read',
     );
-    return context.json(await operationsSnapshot(environment.DB));
+    return context.json({
+      health: await readHealth(environment),
+      ...(await operationsSnapshot(environment.DB)),
+    });
   });
   return routes;
 }

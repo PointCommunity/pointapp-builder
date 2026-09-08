@@ -59,4 +59,32 @@ describe('Owner operations and audit views', () => {
     expect((await app.request('/api/operations', { headers: { cookie } })).status).toBe(403);
     expect((await app.request('/api/audit', { headers: { cookie } })).status).toBe(403);
   });
+  it('records denied mutations with correlation and paginates without sensitive payloads', async () => {
+    const { app, cookie } = await fixture('owner');
+    const denied = await app.request('/api/drafts', {
+      method: 'POST',
+      headers: {
+        cookie,
+        origin: 'https://attacker.example',
+        'sec-fetch-site': 'cross-site',
+        'content-type': 'application/json',
+        'idempotency-key': crypto.randomUUID(),
+      },
+      body: JSON.stringify({ name: 'Never stored', token: 'not-a-real-secret' }),
+    });
+    expect(denied.status).toBe(403);
+    const audit = await app.request('/api/audit?limit=1', { headers: { cookie } });
+    const page = await audit.json<{
+      items: Array<Record<string, unknown>>;
+      nextCursor: string | null;
+    }>();
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]).toMatchObject({
+      action: 'draft.request',
+      outcome: 'denied',
+      reason: 'ORIGIN_DENIED',
+      requestId: expect.any(String),
+    });
+    expect(JSON.stringify(page)).not.toContain('not-a-real-secret');
+  });
 });

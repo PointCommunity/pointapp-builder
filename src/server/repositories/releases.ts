@@ -2,6 +2,7 @@ import type { AppManifest } from '../../content/manifest';
 import type { ReleaseEnvelope } from '../../content/release';
 import { parseStoredJson } from '../d1';
 import { ProblemError } from '../problems';
+import { canonicalJson } from '../../content/crypto';
 
 export interface RevisionRecord {
   id: string;
@@ -90,7 +91,11 @@ export async function storeStagingRelease(
     .prepare('SELECT public_jwk FROM signing_keys WHERE key_id = ?')
     .bind(input.keyId)
     .first<{ public_jwk: string }>();
-  if (existingKey && existingKey.public_jwk !== JSON.stringify(input.publicJwk)) {
+  const publicJwk = canonicalJson(JSON.parse(JSON.stringify(input.publicJwk)) as JsonWebKey);
+  if (
+    existingKey &&
+    canonicalJson(parseStoredJson<JsonWebKey>(existingKey.public_jwk)) !== publicJwk
+  ) {
     throw new ProblemError(
       409,
       'SIGNING_KEY_CONFLICT',
@@ -104,7 +109,7 @@ export async function storeStagingRelease(
       .prepare(
         `INSERT OR IGNORE INTO signing_keys (key_id, algorithm, public_jwk, created_at) VALUES (?, 'Ed25519', ?, ?)`,
       )
-      .bind(input.keyId, JSON.stringify(input.publicJwk), now),
+      .bind(input.keyId, publicJwk, now),
     database
       .prepare(
         `INSERT INTO release_envelopes (id, revision_id, manifest_json, manifest_digest, validation_digest, key_id, algorithm, signature, created_by, created_at)
@@ -193,12 +198,16 @@ export async function findRelease(
   return row?.id ?? null;
 }
 
-export async function publicEnvelope(database: D1Database): Promise<ReleaseEnvelope | null> {
+export async function channelEnvelope(
+  database: D1Database,
+  channel: 'staging' | 'production',
+): Promise<ReleaseEnvelope | null> {
   const row = await database
     .prepare(
       `SELECT r.id, r.revision_id, r.manifest_json, r.manifest_digest, r.key_id, r.signature, r.created_at
-    FROM channel_pointers p JOIN release_envelopes r ON r.id = p.release_id WHERE p.channel = 'production'`,
+    FROM channel_pointers p JOIN release_envelopes r ON r.id = p.release_id WHERE p.channel = ?`,
     )
+    .bind(channel)
     .first<{
       id: string;
       revision_id: string;
@@ -224,3 +233,5 @@ export async function publicEnvelope(database: D1Database): Promise<ReleaseEnvel
     signing: { algorithm: 'Ed25519', keyId: row.key_id, signature: row.signature },
   };
 }
+
+export const publicEnvelope = (database: D1Database) => channelEnvelope(database, 'production');

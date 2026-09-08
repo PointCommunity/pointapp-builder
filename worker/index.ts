@@ -1,5 +1,6 @@
 import { createServerApp, type ApiEnvironment } from '../src/server/app';
 import { applySecurityHeaders } from '../src/server/security';
+import { productionConfigurationIssues } from '../src/server/configuration';
 
 interface AssetBinding {
   fetch(request: Request): Promise<Response>;
@@ -29,6 +30,21 @@ function isServerRoute(pathname: string): boolean {
 }
 
 export async function handleRequest(request: Request, env: RuntimeEnv): Promise<Response> {
+  const configurationIssues = productionConfigurationIssues(env);
+  if (configurationIssues.length > 0)
+    return applySecurityHeaders(
+      Response.json(
+        {
+          type: 'https://appbuilder.pointatx.org/problems/configuration-unavailable',
+          title: 'Service configuration unavailable',
+          status: 503,
+          code: 'CONFIGURATION_UNAVAILABLE',
+          detail: 'PointApp Builder is not ready to serve requests.',
+          requestId: crypto.randomUUID(),
+        },
+        { status: 503 },
+      ),
+    );
   const url = new URL(request.url);
   const builderUrl = new URL(env.BUILDER_ORIGIN);
   if (

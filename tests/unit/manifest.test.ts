@@ -14,7 +14,6 @@ describe('PointApp content manifest', () => {
     for (const [index, type] of elementTypes.entries()) {
       const candidate = structuredClone(sampleManifest);
       candidate.screens[0].elements = [createElement(type, `element-${index}`)];
-      if (['image', 'video', 'audio'].includes(type)) continue;
       expect(() => AppManifestSchema.parse(candidate), type).not.toThrow();
     }
   });

@@ -15,7 +15,7 @@ function mutation(headers: HeadersInit = {}, body = '{}') {
       origin,
       'sec-fetch-site': 'same-origin',
       'content-type': 'application/json',
-      'idempotency-key': '4ddde8e1-a3f5-46b6-a900-3837da842356',
+      'idempotency-key': '4ddde8e1-a3f5-46b6-a900-3837da842356', // gitleaks:allow - UUID fixture
       ...headers,
     },
     body,

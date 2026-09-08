@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { MediaAsset } from '../../server/repositories/media';
-import { changeMediaState, createMedia, listMedia } from '../api';
+import { changeMediaState, createMedia, invalidateMediaOptions, listMedia } from '../api';
 
 export function LibraryPanel({ readOnly }: { readOnly?: boolean }) {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
@@ -29,6 +29,7 @@ export function LibraryPanel({ readOnly }: { readOnly?: boolean }) {
         },
         (data.get('file') as File)?.size ? (data.get('file') as File) : undefined,
       );
+      invalidateMediaOptions();
       form.reset();
       await refresh();
     } catch (cause) {
@@ -134,12 +135,19 @@ export function LibraryPanel({ readOnly }: { readOnly?: boolean }) {
             )}
             <button
               disabled={readOnly}
-              onClick={() =>
-                void changeMediaState(
-                  asset.id,
-                  asset.state === 'ready' ? 'archived' : 'ready',
-                ).then(refresh)
-              }
+              onClick={() => {
+                setError('');
+                void changeMediaState(asset.id, asset.state === 'ready' ? 'archived' : 'ready')
+                  .then(() => {
+                    invalidateMediaOptions();
+                    return refresh();
+                  })
+                  .catch((cause) =>
+                    setError(
+                      cause instanceof Error ? cause.message : 'Media could not be updated.',
+                    ),
+                  );
+              }}
               type="button"
             >
               {asset.state === 'ready' ? 'Archive' : 'Recover'}

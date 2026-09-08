@@ -3,6 +3,8 @@ import { ProblemError } from './problems';
 
 const SESSION_COOKIE = '__Host-pointapp_builder_session';
 const OAUTH_COOKIE = '__Host-pointapp_builder_oauth';
+const LOCAL_SESSION_COOKIE = 'pointapp_builder_session';
+const LOCAL_OAUTH_COOKIE = 'pointapp_builder_oauth';
 const SESSION_SECONDS = 8 * 60 * 60;
 const OAUTH_SECONDS = 10 * 60;
 const encoder = new TextEncoder();
@@ -126,8 +128,12 @@ function readCookie(request: Request, name: string): string | null {
   return null;
 }
 
-function setCookie(name: string, value: string, maxAge: number): string {
-  return `${name}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
+function setCookie(name: string, value: string, maxAge: number, secure = true): string {
+  return `${name}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly${secure ? '; Secure' : ''}; SameSite=Lax`;
+}
+
+function cookieName(productionName: string, localName: string, secure: boolean): string {
+  return secure ? productionName : localName;
 }
 
 function assertRequestOrigin(request: Request, expectedOrigin: string): void {
@@ -156,7 +162,10 @@ export class GitHubSessionCodec {
   }
 
   async identityFromRequest(request: Request, now = new Date()): Promise<GitHubIdentity> {
-    const token = readCookie(request, SESSION_COOKIE);
+    const secure = new URL(request.url).protocol === 'https:';
+    const token = secure
+      ? readCookie(request, SESSION_COOKIE)
+      : (readCookie(request, LOCAL_SESSION_COOKIE) ?? readCookie(request, SESSION_COOKIE));
     if (!token) throw new AuthenticationError();
     let session: z.infer<typeof SessionSchema>;
     try {
@@ -196,8 +205,8 @@ export class GitHubSessionCodec {
     return state;
   }
 
-  clearSessionCookie(): string {
-    return setCookie(SESSION_COOKIE, '', 0);
+  clearSessionCookie(secure = true): string {
+    return setCookie(cookieName(SESSION_COOKIE, LOCAL_SESSION_COOKIE, secure), '', 0, secure);
   }
 
   async sessionResponse(
@@ -205,14 +214,16 @@ export class GitHubSessionCodec {
     location: string,
     now = new Date(),
   ): Promise<Response> {
+    const secure = new URL(location).protocol === 'https:';
     return new Response(null, {
       status: 302,
       headers: {
         location,
         'set-cookie': setCookie(
-          SESSION_COOKIE,
+          cookieName(SESSION_COOKIE, LOCAL_SESSION_COOKIE, secure),
           await this.encodeSession(identity, now),
           SESSION_SECONDS,
+          secure,
         ),
       },
     });
@@ -239,14 +250,16 @@ export class GitHubAuthenticator {
       codeChallenge: challenge,
       redirectUri: `${this.config.builderOrigin}/auth/callback`,
     });
+    const secure = new URL(this.config.builderOrigin).protocol === 'https:';
     return new Response(null, {
       status: 302,
       headers: {
         location: location.toString(),
         'set-cookie': setCookie(
-          OAUTH_COOKIE,
+          cookieName(OAUTH_COOKIE, LOCAL_OAUTH_COOKIE, secure),
           await this.sessions.encodeOAuth(state, verifier, returnTo),
           OAUTH_SECONDS,
+          secure,
         ),
       },
     });
@@ -260,7 +273,8 @@ export class GitHubAuthenticator {
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
-    const stateCookie = readCookie(request, OAUTH_COOKIE);
+    const secure = new URL(this.config.builderOrigin).protocol === 'https:';
+    const stateCookie = readCookie(request, cookieName(OAUTH_COOKIE, LOCAL_OAUTH_COOKIE, secure));
     if (!code || !state || !stateCookie) {
       throw new AuthenticationError('GitHub sign-in state is missing');
     }
@@ -272,7 +286,10 @@ export class GitHubAuthenticator {
       `${this.config.builderOrigin}${saved.returnTo}`,
       now,
     );
-    response.headers.append('set-cookie', setCookie(OAUTH_COOKIE, '', 0));
+    response.headers.append(
+      'set-cookie',
+      setCookie(cookieName(OAUTH_COOKIE, LOCAL_OAUTH_COOKIE, secure), '', 0, secure),
+    );
     return { identity, response };
   }
 

@@ -4,7 +4,7 @@ import { requireActiveMembership } from '../authorize';
 import { claimIdempotency, completeIdempotency } from '../idempotency';
 import { ProblemError } from '../problems';
 import { consumeRateLimit } from '../rate-limit';
-import { listReleaseHistory } from '../repositories/releases';
+import { channelEnvelope, listReleaseHistory } from '../repositories/releases';
 import { readJsonMutation } from '../security';
 import {
   generatedSigner,
@@ -78,6 +78,13 @@ export function createReleaseRoutes(environment: ApiEnvironment, auth: AuthDepen
   routes.get('/api/releases', async (context) => {
     await requireActiveMembership(context.req.raw, environment.DB, auth.sessions, 'draft:read');
     return context.json({ items: await listReleaseHistory(environment.DB), nextCursor: null });
+  });
+  routes.get('/api/releases/staging', async (context) => {
+    await requireActiveMembership(context.req.raw, environment.DB, auth.sessions, 'draft:read');
+    const envelope = await channelEnvelope(environment.DB, 'staging');
+    if (!envelope)
+      throw new ProblemError(404, 'STAGING_NOT_PUBLISHED', 'No PointApp Staging release exists');
+    return context.json(envelope);
   });
   routes.post('/api/releases/staging', async (context) => {
     const actor = await requireActiveMembership(

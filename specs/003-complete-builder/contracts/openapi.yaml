@@ -417,6 +417,19 @@ paths:
           }
         '403': { $ref: '#/components/responses/Problem' }
   /api/releases/staging:
+    get:
+      tags: [Releases]
+      summary: Read the exact current PointApp Staging envelope
+      operationId: getStagingRelease
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Current signed Staging envelope.
+          content:
+            { application/json: { schema: { $ref: '#/components/schemas/PublicReleaseEnvelope' } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
     post:
       tags: [Releases]
       summary: Publish a revision to PointApp Staging
@@ -684,27 +697,277 @@ components:
       additionalProperties: false
       properties:
         schemaVersion: { type: integer, const: 1 }
-        app: { type: object, additionalProperties: true }
-        settings: { type: object, additionalProperties: true }
-        theme: { type: object, additionalProperties: true }
-        audiences:
-          { type: array, maxItems: 50, items: { type: object, additionalProperties: true } }
+        app: { $ref: '#/components/schemas/AppIdentity' }
+        settings: { $ref: '#/components/schemas/AppSettings' }
+        theme: { $ref: '#/components/schemas/AppTheme' }
+        audiences: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/Audience' } }
         screens:
           {
             type: array,
             minItems: 1,
             maxItems: 100,
-            items: { type: object, additionalProperties: true },
+            items: { $ref: '#/components/schemas/Screen' },
           }
         navigation:
           {
             type: array,
             minItems: 2,
             maxItems: 5,
-            items: { type: object, additionalProperties: true },
+            items: { $ref: '#/components/schemas/NavigationItem' },
           }
-        campaigns:
-          { type: array, maxItems: 100, items: { type: object, additionalProperties: true } }
+        campaigns: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/Campaign' } }
+    Identifier:
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: '^[a-z][a-z0-9-]*$'
+    Destination:
+      type: string
+      maxLength: 500
+      pattern: '^(?:/|https://)'
+    AppIdentity:
+      type: object
+      additionalProperties: false
+      required: [id, name, shortName, tagline]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        shortName: { type: string, minLength: 1, maxLength: 18 }
+        tagline: { type: string, maxLength: 160 }
+    AppSettings:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          organizationName,
+          supportUrl,
+          privacyUrl,
+          termsUrl,
+          locale,
+          timeZone,
+          refreshSeconds,
+          minimumClientContract,
+        ]
+      properties:
+        organizationName: { type: string, minLength: 1, maxLength: 120 }
+        supportUrl: { type: string, format: uri, pattern: '^https://' }
+        privacyUrl: { type: string, format: uri, pattern: '^https://' }
+        termsUrl: { type: string, format: uri, pattern: '^https://' }
+        locale: { type: string, pattern: '^[a-z]{2}(?:-[A-Z]{2})?$' }
+        timeZone: { type: string, minLength: 1, maxLength: 80 }
+        refreshSeconds: { type: integer, minimum: 30, maximum: 86400 }
+        minimumClientContract: { type: integer, minimum: 1, maximum: 100 }
+    AppTheme:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          accent,
+          accentContrast,
+          background,
+          surface,
+          text,
+          muted,
+          logoMediaId,
+          typographyScale,
+          cornerStyle,
+          colorMode,
+        ]
+      properties:
+        accent: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        accentContrast: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        background: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        surface: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        text: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        muted: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        logoMediaId: { anyOf: [{ $ref: '#/components/schemas/Id' }, { type: 'null' }] }
+        typographyScale: { type: string, enum: [compact, standard, large] }
+        cornerStyle: { type: string, enum: [square, soft, round] }
+        colorMode: { type: string, enum: [light, dark, system] }
+    Audience:
+      type: object
+      additionalProperties: false
+      required: [id, name, description]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        description: { type: string, maxLength: 240 }
+    NavigationItem:
+      type: object
+      additionalProperties: false
+      required: [id, label, icon, screenId]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        label: { type: string, minLength: 1, maxLength: 20 }
+        icon: { type: string, enum: [home, calendar, play, people, more] }
+        screenId: { $ref: '#/components/schemas/Identifier' }
+    Campaign:
+      type: object
+      additionalProperties: false
+      required: [id, title, body, destination, audienceId, status, scheduledAt]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        title: { type: string, minLength: 1, maxLength: 100 }
+        body: { type: string, minLength: 1, maxLength: 240 }
+        destination: { $ref: '#/components/schemas/Destination' }
+        audienceId: { anyOf: [{ $ref: '#/components/schemas/Identifier' }, { type: 'null' }] }
+        status: { type: string, enum: [draft, ready, scheduled] }
+        scheduledAt: { type: [string, 'null'], format: date-time }
+    Screen:
+      type: object
+      additionalProperties: false
+      required: [id, title, slug, visible, audienceIds, elements]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        title: { type: string, minLength: 1, maxLength: 80 }
+        slug: { $ref: '#/components/schemas/Identifier' }
+        visible: { type: boolean }
+        audienceIds:
+          { type: array, maxItems: 50, items: { $ref: '#/components/schemas/Identifier' } }
+        elements: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/AppElement' } }
+    AppElement:
+      type: object
+      required: [id, type, audienceIds]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        type:
+          {
+            type: string,
+            enum:
+              [
+                hero,
+                rich-text,
+                action,
+                image,
+                video,
+                audio,
+                card-list,
+                event-list,
+                scripture,
+                divider,
+                spacer,
+                embed-link,
+              ],
+          }
+        audienceIds:
+          { type: array, maxItems: 50, items: { $ref: '#/components/schemas/Identifier' } }
+      discriminator: { propertyName: type }
+      allOf:
+        - oneOf:
+            - { $ref: '#/components/schemas/HeroElement' }
+            - { $ref: '#/components/schemas/RichTextElement' }
+            - { $ref: '#/components/schemas/ActionElement' }
+            - { $ref: '#/components/schemas/ImageElement' }
+            - { $ref: '#/components/schemas/VideoElement' }
+            - { $ref: '#/components/schemas/AudioElement' }
+            - { $ref: '#/components/schemas/CardListElement' }
+            - { $ref: '#/components/schemas/EventListElement' }
+            - { $ref: '#/components/schemas/ScriptureElement' }
+            - { $ref: '#/components/schemas/DividerElement' }
+            - { $ref: '#/components/schemas/SpacerElement' }
+            - { $ref: '#/components/schemas/EmbedLinkElement' }
+    HeroElement:
+      type: object
+      required: [type, eyebrow, title, body, imageMediaId, actionLabel, actionDestination]
+      properties:
+        type: { type: string, const: hero }
+        eyebrow: { type: string, maxLength: 60 }
+        title: { type: string, minLength: 1, maxLength: 100 }
+        body: { type: string, maxLength: 500 }
+        imageMediaId: { anyOf: [{ $ref: '#/components/schemas/Id' }, { type: 'null' }] }
+        actionLabel: { type: string, maxLength: 40 }
+        actionDestination:
+          { anyOf: [{ $ref: '#/components/schemas/Destination' }, { type: string, const: '' }] }
+    RichTextElement:
+      type: object
+      required: [type, body, style]
+      properties:
+        type: { type: string, const: rich-text }
+        body: { type: string, minLength: 1, maxLength: 10000 }
+        style: { type: string, enum: [body, lead, caption] }
+    ActionElement:
+      type: object
+      required: [type, label, destination, appearance]
+      properties:
+        type: { type: string, const: action }
+        label: { type: string, minLength: 1, maxLength: 40 }
+        destination: { $ref: '#/components/schemas/Destination' }
+        appearance: { type: string, enum: [primary, secondary, quiet] }
+    ImageElement:
+      type: object
+      required: [type, mediaId, alt, aspect]
+      properties:
+        type: { type: string, const: image }
+        mediaId: { $ref: '#/components/schemas/Id' }
+        alt: { type: string, minLength: 1, maxLength: 500 }
+        aspect: { type: string, enum: [square, portrait, landscape, wide] }
+    VideoElement:
+      type: object
+      required: [type, mediaId, title]
+      properties:
+        type: { type: string, const: video }
+        mediaId: { $ref: '#/components/schemas/Id' }
+        title: { type: string, minLength: 1, maxLength: 120 }
+    AudioElement:
+      type: object
+      required: [type, mediaId, title, speaker]
+      properties:
+        type: { type: string, const: audio }
+        mediaId: { $ref: '#/components/schemas/Id' }
+        title: { type: string, minLength: 1, maxLength: 120 }
+        speaker: { type: string, maxLength: 120 }
+    Card:
+      type: object
+      additionalProperties: false
+      required: [id, title, body, destination, imageMediaId]
+      properties:
+        id: { $ref: '#/components/schemas/Identifier' }
+        title: { type: string, minLength: 1, maxLength: 100 }
+        body: { type: string, maxLength: 280 }
+        destination: { $ref: '#/components/schemas/Destination' }
+        imageMediaId: { anyOf: [{ $ref: '#/components/schemas/Id' }, { type: 'null' }] }
+    CardListElement:
+      type: object
+      required: [type, title, cards]
+      properties:
+        type: { type: string, const: card-list }
+        title: { type: string, maxLength: 100 }
+        cards:
+          { type: array, minItems: 1, maxItems: 20, items: { $ref: '#/components/schemas/Card' } }
+    EventListElement:
+      type: object
+      required: [type, title, sourceUrl, limit]
+      properties:
+        type: { type: string, const: event-list }
+        title: { type: string, maxLength: 100 }
+        sourceUrl: { type: string, format: uri, pattern: '^https://' }
+        limit: { type: integer, minimum: 1, maximum: 20 }
+    ScriptureElement:
+      type: object
+      required: [type, reference, text, translation]
+      properties:
+        type: { type: string, const: scripture }
+        reference: { type: string, minLength: 1, maxLength: 80 }
+        text: { type: string, minLength: 1, maxLength: 5000 }
+        translation: { type: string, minLength: 2, maxLength: 20 }
+    DividerElement:
+      type: object
+      required: [type]
+      properties: { type: { type: string, const: divider } }
+    SpacerElement:
+      type: object
+      required: [type, size]
+      properties:
+        type: { type: string, const: spacer }
+        size: { type: string, enum: [small, medium, large] }
+    EmbedLinkElement:
+      type: object
+      required: [type, title, url, height]
+      properties:
+        type: { type: string, const: embed-link }
+        title: { type: string, minLength: 1, maxLength: 100 }
+        url: { type: string, format: uri, pattern: '^https://' }
+        height: { type: integer, minimum: 180, maximum: 900 }
     MediaInput:
       type: object
       required: [kind, title]

@@ -15,6 +15,7 @@ const HttpsOrAppPathSchema = z
   );
 const AudienceIdsSchema = z.array(IdentifierSchema).max(50).default([]);
 const MediaIdSchema = z.uuid();
+export const UnselectedMediaId = '00000000-0000-4000-8000-000000000000';
 const ElementBase = { id: IdentifierSchema, audienceIds: AudienceIdsSchema };
 
 const HeroElementSchema = z.strictObject({
@@ -396,12 +397,18 @@ export function createElement(type: AppElementType, id: string): AppElement {
     image: {
       ...common,
       type: 'image',
-      mediaId: 'choose-image',
+      mediaId: UnselectedMediaId,
       alt: 'Describe this image',
       aspect: 'landscape',
     },
-    video: { ...common, type: 'video', mediaId: 'choose-video', title: 'New video' },
-    audio: { ...common, type: 'audio', mediaId: 'choose-audio', title: 'New audio', speaker: '' },
+    video: { ...common, type: 'video', mediaId: UnselectedMediaId, title: 'New video' },
+    audio: {
+      ...common,
+      type: 'audio',
+      mediaId: UnselectedMediaId,
+      title: 'New audio',
+      speaker: '',
+    },
     'card-list': {
       ...common,
       type: 'card-list',

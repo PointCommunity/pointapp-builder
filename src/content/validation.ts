@@ -34,18 +34,28 @@ export async function externalMediaReachable(
   asset: MediaAsset,
   fetcher: typeof fetch = fetch,
 ): Promise<boolean> {
-  if (!asset.externalUrl) return true;
-  if (!publicHttpsUrl(asset.externalUrl)) return false;
-  try {
-    const response = await fetcher(asset.externalUrl, {
-      method: 'HEAD',
-      redirect: 'error',
-      signal: AbortSignal.timeout(3_000),
-    });
-    return response.ok;
-  } catch {
-    return false;
+  for (const url of [asset.externalUrl, asset.captionUrl].filter(Boolean) as string[]) {
+    if (!publicHttpsUrl(url)) return false;
+    try {
+      const response = await fetcher(url, {
+        method: 'HEAD',
+        redirect: 'error',
+        signal: AbortSignal.timeout(3_000),
+      });
+      if (response.ok) continue;
+      if (response.status !== 405 && response.status !== 501) return false;
+      const fallback = await fetcher(url, {
+        method: 'GET',
+        headers: { range: 'bytes=0-0' },
+        redirect: 'error',
+        signal: AbortSignal.timeout(3_000),
+      });
+      if (!fallback.ok && fallback.status !== 206) return false;
+    } catch {
+      return false;
+    }
   }
+  return true;
 }
 
 export function referencedMediaIds(manifest: AppManifest): Set<string> {

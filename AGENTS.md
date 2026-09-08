@@ -11,7 +11,7 @@
 
 - Role order is Editor < Publisher < Administrator < Owner.
 - Editors author drafts. Publishers may publish an exact revision to Staging. Administrators and Owners may promote the exact verified Staging revision to Production.
-- Client-side affordances are not authorization. A future authenticated API must enforce every capability independently.
+- Client-side affordances are not authorization. The authenticated Worker API enforces every capability independently.
 - Staging and Production always identify an immutable manifest revision and digest. Production promotion may never rebuild or silently alter the Staging candidate.
 - Preserve a last-known-good Production manifest and an auditable rollback path.
 
@@ -21,7 +21,7 @@
 - Before any completion claim, run formatting, types, lint, unit/coverage, build, and relevant browser tests.
 - Human-facing documents and diagrams must be dark-mode HTML. Markdown under `tasks/` is internal workflow state.
 - Preserve unknown user-owned work. Never reset, clean, stash, overwrite, commit, or deploy it without direction.
-- Cloudflare Worker deployments must use the verified Point Community account and an exact clean commit. Authentication, mutations, PointApp delivery, and Production publishing remain disabled until separately implemented and authorized.
+- Cloudflare Worker deployments must use the verified Point Community account and an exact clean commit. The Builder has one direct Production environment; PointApp content retains separate immutable Staging and Production channels.
 
 ## Active Technologies
 

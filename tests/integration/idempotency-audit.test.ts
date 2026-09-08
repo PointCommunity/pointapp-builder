@@ -22,7 +22,7 @@ describe('idempotent mutations', () => {
     const input = {
       actorId: '1202831',
       operation: 'draft:create',
-      key: '4ddde8e1-a3f5-46b6-a900-3837da842356',
+      key: '4ddde8e1-a3f5-46b6-a900-3837da842356', // gitleaks:allow - UUID fixture
       body: { name: 'Sunday' },
       now: new Date('2026-09-07T12:00:00Z'),
     };
@@ -41,7 +41,7 @@ describe('idempotent mutations', () => {
     const base = {
       actorId: '1202831',
       operation: 'draft:create',
-      key: '4ddde8e1-a3f5-46b6-a900-3837da842356',
+      key: '4ddde8e1-a3f5-46b6-a900-3837da842356', // gitleaks:allow - UUID fixture
       now: new Date('2026-09-07T12:00:00Z'),
     };
     await claimIdempotency(db, { ...base, body: { name: 'Sunday' } });

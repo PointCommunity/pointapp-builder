@@ -38,6 +38,12 @@ export function createMediaRoutes(environment: ApiEnvironment, auth: AuthDepende
         'media:create',
       );
     const form = await context.req.raw.formData();
+    let decodedBytes = 0;
+    for (const value of form.values())
+      decodedBytes +=
+        typeof value === 'string' ? new TextEncoder().encode(value).byteLength : value.size;
+    if (decodedBytes > MAX_IMAGE_BYTES + 64 * 1024)
+      throw new ProblemError(413, 'REQUEST_TOO_LARGE', 'The request body is too large');
     const rawMetadata = form.get('metadata');
     if (typeof rawMetadata !== 'string' || rawMetadata.length > 4096)
       throw new ProblemError(400, 'MEDIA_METADATA_REQUIRED', 'Valid media metadata is required');
@@ -91,6 +97,12 @@ export function createMediaRoutes(environment: ApiEnvironment, auth: AuthDepende
       .strictObject({ state: z.enum(['ready', 'archived']) })
       .parse(await readJsonMutation(context.req.raw, environment.BUILDER_ORIGIN));
     const id = context.req.param('mediaId');
+    if (environment.MUTATION_RATE_LIMITER)
+      await consumeRateLimit(
+        environment.MUTATION_RATE_LIMITER,
+        `actor:${actor.githubUserId}`,
+        'media:update',
+      );
     const idempotency = {
       actorId: actor.githubUserId,
       operation: `media:update:${id}`,

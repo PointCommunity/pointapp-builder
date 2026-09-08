@@ -86,6 +86,24 @@ describe('GitHub App OAuth', () => {
     ).rejects.toBeInstanceOf(AuthenticationError);
   });
 
+  it('uses an unprefixed non-secure cookie only for loopback development', async () => {
+    const codec = new GitHubSessionCodec(config.sessionSecret);
+    const response = await codec.sessionResponse(identity, 'http://127.0.0.1:4173/');
+    const cookie = response.headers.get('set-cookie') ?? '';
+    const token = cookie.split(';')[0]?.split('=').slice(1).join('=') ?? '';
+
+    expect(cookie).toContain('pointapp_builder_session=');
+    expect(cookie).not.toContain('__Host-');
+    expect(cookie).not.toContain('Secure');
+    await expect(
+      codec.identityFromRequest(
+        new Request('http://127.0.0.1:4173/api/session', {
+          headers: { cookie: `pointapp_builder_session=${token}` },
+        }),
+      ),
+    ).resolves.toEqual(identity);
+  });
+
   it('rejects a mismatched or expired OAuth state before exchange', async () => {
     const codec = new GitHubSessionCodec(config.sessionSecret);
     const authenticator = new GitHubAuthenticator(config, gateway(), codec);

@@ -12,12 +12,16 @@ function environment(databaseResult: 'reachable' | 'unavailable' = 'reachable'):
       fetch: async () => new Response('<!doctype html><title>PointApp Builder</title>'),
     },
     DB: {
-      prepare: (query: string) => ({
-        first: async () => {
-          if (databaseResult === 'unavailable') throw new Error('D1 unavailable');
-          return query.includes('SELECT 1 AS ok') ? { ok: 1 } : null;
-        },
-      }),
+      prepare: (query: string) => {
+        const statement = {
+          bind: () => statement,
+          first: async () => {
+            if (databaseResult === 'unavailable') throw new Error('D1 unavailable');
+            return query.includes('SELECT 1 AS ok') ? { ok: 1 } : null;
+          },
+        };
+        return statement;
+      },
     } as unknown as D1Database,
     BOOTSTRAP_OWNER_GITHUB_ID: '1202831',
   };

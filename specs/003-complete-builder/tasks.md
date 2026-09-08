@@ -47,75 +47,75 @@ Internal workflow state. Human-readable scope and decisions are in the adjacent 
 
 ## Phase 4 — US2 Author and preserve app content (P1)
 
-- [ ] T035 [P] [US2] Write complete manifest-schema boundary tests for every element and configuration area in `tests/unit/content/manifest.test.ts`
-- [ ] T036 [P] [US2] Write draft CRUD, duplicate/archive/recover, immutable revision, and stale-parent tests in `tests/integration/drafts.test.ts`
-- [ ] T037 [P] [US2] Write image upload/type/size/checksum/accessibility and media reachability tests in `tests/integration/media.test.ts`
-- [ ] T038 [US2] Replace prototype manifest with bounded schema-v1 types and defaults in `src/content/manifest.ts`
-- [ ] T039 [US2] Implement immutable draft/revision repository and optimistic-concurrency service in `src/server/repositories/drafts.ts` and `src/server/services/drafts.ts`
-- [ ] T040 [US2] Implement media repository, image metadata parsing/chunking, external AV metadata, and lifecycle service in `src/server/repositories/media.ts` and `src/server/services/media.ts`
-- [ ] T041 [US2] Implement draft/revision and private media routes in `src/server/routes/drafts.ts` and `src/server/routes/media.ts`
-- [ ] T042 [US2] Implement typed fetch client, abort/retry policy, errors, and session refresh in `src/client/api.ts`
-- [ ] T043 [US2] Implement draft chooser, create/duplicate/archive/recover, save status, revision history, and conflict recovery in `src/client/components/DraftBar.tsx`
-- [ ] T044 [US2] Implement screen and all supported element editors with reorder/duplicate/delete in `src/client/panels/ContentPanel.tsx`
-- [ ] T045 [US2] Implement image upload and external audio/video library management in `src/client/panels/LibraryPanel.tsx`
-- [ ] T046 [US2] Implement persistent Navigation, Branding, Audience, Notifications, and Settings panels in `src/client/panels/NavigationPanel.tsx`, `BrandingPanel.tsx`, `AudiencePanel.tsx`, `NotificationsPanel.tsx`, and `SettingsPanel.tsx`
-- [ ] T047 [US2] Render manifest-equivalent phone/tablet preview with navigation and audience selection in `src/preview/AppPreview.tsx`
-- [ ] T048 [US2] Add complete author/save/reload/conflict/media browser journeys in `e2e/authoring.spec.ts`
+- [x] T035 [P] [US2] Write complete manifest-schema boundary tests for every element and configuration area in `tests/unit/manifest.test.ts`
+- [x] T036 [P] [US2] Write draft CRUD, duplicate/archive/recover, immutable revision, and stale-parent tests in `tests/integration/drafts.test.ts`
+- [x] T037 [P] [US2] Write image upload/type/size/checksum/accessibility and media reachability tests in `tests/integration/media.test.ts`
+- [x] T038 [US2] Replace prototype manifest with bounded schema-v1 types and defaults in `src/content/manifest.ts`
+- [x] T039 [US2] Implement immutable draft/revision repository and optimistic-concurrency service in `src/server/repositories/drafts.ts` and `src/server/services/drafts.ts`
+- [x] T040 [US2] Implement media repository, image metadata parsing/chunking, external AV metadata, and lifecycle service in `src/server/repositories/media.ts` and `src/server/services/media.ts`
+- [x] T041 [US2] Implement draft/revision and private media routes in `src/server/routes/drafts.ts` and `src/server/routes/media.ts`
+- [x] T042 [US2] Implement typed fetch client, abort/retry policy, errors, and session refresh in `src/client/api.ts`
+- [x] T043 [US2] Implement draft chooser, create/duplicate/archive/recover, save status, revision history, and conflict recovery in `src/client/components/DraftBar.tsx`
+- [x] T044 [US2] Implement screen and all supported element editors with reorder/duplicate/delete in `src/client/panels/ContentPanel.tsx`
+- [x] T045 [US2] Implement image upload and external audio/video library management in `src/client/panels/LibraryPanel.tsx`
+- [x] T046 [US2] Implement persistent Navigation, Branding, Audience, Notifications, and Settings panels in `src/client/panels/NavigationPanel.tsx`, `BrandingPanel.tsx`, `AudiencePanel.tsx`, `NotificationsPanel.tsx`, and `SettingsPanel.tsx`
+- [x] T047 [US2] Render manifest-equivalent phone/tablet preview with navigation and audience selection in `src/preview/AppPreview.tsx`
+- [x] T048 [US2] Add complete author/save/reload/conflict/media browser journeys in `tests/e2e/authoring.spec.ts`
 
 ## Phase 5 — US3 Release exact content to devices (P1)
 
-- [ ] T049 [P] [US3] Write release-validation issue-path and readiness tests in `tests/unit/content/release-validation.test.ts`
-- [ ] T050 [P] [US3] Write signed-envelope deterministic signature and verification-vector tests in `tests/unit/content/release.test.ts`
-- [ ] T051 [P] [US3] Write Publisher Staging, Admin Production, exact-digest, rollback, and idempotency tests in `tests/integration/releases.test.ts`
-- [ ] T052 [P] [US3] Write anonymous ETag/304/key/media/privacy/cache contract tests in `tests/integration/public-content.test.ts`
-- [ ] T053 [US3] Implement deterministic release validator with schema/navigation/media/a11y/link/compatibility/campaign checks in `src/content/validation.ts`
-- [ ] T054 [US3] Implement immutable release, channel-event, and pointer repositories in `src/server/repositories/releases.ts`
-- [ ] T055 [US3] Implement signed Staging publish, exact Production promotion, and prior-Production rollback services in `src/server/services/releases.ts`
-- [ ] T056 [US3] Implement protected validation/release/history/rollback routes in `src/server/routes/releases.ts`
-- [ ] T057 [US3] Implement anonymous Production envelope, public key, and reachable-media routes with ETags in `src/server/routes/public-content.ts`
-- [ ] T058 [US3] Implement release validation, channel status, history, exact-candidate confirmation, and rollback UI in `src/client/panels/ReleasesPanel.tsx`
-- [ ] T059 [US3] Add external signature-verification fixture and contract test in `tests/fixtures/verify-release.mjs` and `tests/contract/openapi.test.ts`
-- [ ] T060 [US3] Add end-to-end save → Staging → Production → 304 → rollback journey in `e2e/releases.spec.ts`
+- [x] T049 [P] [US3] Write release-validation issue-path and readiness tests in `tests/unit/content/release-validation.test.ts`
+- [x] T050 [P] [US3] Write signed-envelope deterministic signature and verification-vector tests in `tests/unit/release.test.ts`
+- [x] T051 [P] [US3] Write Publisher Staging, Admin Production, exact-digest, rollback, and idempotency tests in `tests/integration/releases.test.ts`
+- [x] T052 [P] [US3] Write anonymous ETag/304/key/media/privacy/cache contract tests in `tests/integration/public-content.test.ts`
+- [x] T053 [US3] Implement deterministic release validator with schema/navigation/media/a11y/link/compatibility/campaign checks in `src/content/validation.ts`
+- [x] T054 [US3] Implement immutable release, channel-event, and pointer repositories in `src/server/repositories/releases.ts`
+- [x] T055 [US3] Implement signed Staging publish, exact Production promotion, and prior-Production rollback services in `src/server/services/releases.ts`
+- [x] T056 [US3] Implement protected validation/release/history/rollback routes in `src/server/routes/releases.ts`
+- [x] T057 [US3] Implement anonymous Production envelope, public key, and reachable-media routes with ETags in `src/server/routes/public-content.ts`
+- [x] T058 [US3] Implement release validation, channel status, history, exact-candidate confirmation, and rollback UI in `src/client/panels/ReleasesPanel.tsx`
+- [x] T059 [US3] Add external signature-verification fixture and contract test in `tests/fixtures/verify-release.mjs` and `tests/contract/openapi.test.ts`
+- [x] T060 [US3] Add end-to-end save → Staging → Production → 304 → rollback journey in `tests/e2e/releases.spec.ts`
 
 ## Phase 6 — US4 Operate every Builder panel (P2)
 
-- [ ] T061 [P] [US4] Write per-panel persistence and reload component tests in `tests/unit/client/panels.test.tsx`
-- [ ] T062 [P] [US4] Write no-placeholder/no-simulated-success static test in `tests/unit/client/completeness.test.ts`
-- [ ] T063 [US4] Implement persistent Access panel with pending queue and scoped role controls in `src/client/panels/AccessPanel.tsx`
-- [ ] T064 [US4] Complete Content and Library empty/loading/error/validation states in `src/client/panels/ContentPanel.tsx` and `src/client/panels/LibraryPanel.tsx`
-- [ ] T065 [US4] Complete Navigation, Branding, Audience, Notifications, and Settings states in their `src/client/panels/` modules
-- [ ] T066 [US4] Implement route-aware sidebar, responsive panel shell, actual identity menu, and sign-out in `src/client/components/AppShell.tsx`
-- [ ] T067 [US4] Implement accessible confirmations, toasts, validation summary, unsaved-change warning, and recovery UI in `src/client/components/feedback/`
-- [ ] T068 [US4] Remove all prototype role/content state and placeholder messaging from `src/client/App.tsx`
-- [ ] T069 [US4] Add nine-panel persistence and reload journey in `e2e/panels.spec.ts`
+- [x] T061 [P] [US4] Write per-panel persistence and reload component tests in `tests/unit/client/panels.test.tsx`
+- [x] T062 [P] [US4] Write no-placeholder/no-simulated-success static test in `tests/unit/client/completeness.test.ts`
+- [x] T063 [US4] Implement persistent Access panel with pending queue and scoped role controls in `src/client/panels/AccessPanel.tsx`
+- [x] T064 [US4] Complete Content and Library empty/loading/error/validation states in `src/client/panels/ContentPanel.tsx` and `src/client/panels/LibraryPanel.tsx`
+- [x] T065 [US4] Complete Navigation, Branding, Audience, Notifications, and Settings states in their `src/client/panels/` modules
+- [x] T066 [US4] Implement route-aware sidebar, responsive panel shell, actual identity menu, and sign-out in `src/client/App.tsx`
+- [x] T067 [US4] Implement accessible confirmations, toasts, validation summary, unsaved-change warning, and recovery UI in `src/client/components/feedback/`
+- [x] T068 [US4] Remove all prototype role/content state and placeholder messaging from `src/client/App.tsx`
+- [x] T069 [US4] Add all-panel persistence and reload journey in `tests/e2e/authoring.spec.ts`
 
 ## Phase 7 — US5 Audit and recover safely (P2)
 
-- [ ] T070 [P] [US5] Write safe audit visibility/redaction/pagination tests in `tests/integration/audit.test.ts`
-- [ ] T071 [P] [US5] Write health/capacity no-secret and degraded-dependency tests in `tests/integration/operations.test.ts`
-- [ ] T072 [US5] Implement audit and operations read repositories/services in `src/server/repositories/operations.ts` and `src/server/services/operations.ts`
-- [ ] T073 [US5] Implement Owner-only audit and operations routes in `src/server/routes/operations.ts`
-- [ ] T074 [US5] Implement audit, capacity, health, release, and rollback operations UI in `src/client/panels/OperationsPanel.tsx`
-- [ ] T075 [US5] Add audit trail and recovery browser journey in `e2e/operations.spec.ts`
+- [x] T070 [P] [US5] Write safe audit visibility/redaction/pagination tests in `tests/integration/operations.test.ts`
+- [x] T071 [P] [US5] Write health/capacity no-secret and degraded-dependency tests in `tests/integration/operations.test.ts`
+- [x] T072 [US5] Implement audit and operations read repositories/services in `src/server/repositories/operations.ts` and `src/server/services/operations.ts`
+- [x] T073 [US5] Implement Owner-only audit and operations routes in `src/server/routes/operations.ts`
+- [x] T074 [US5] Implement audit, capacity, health, release, and rollback operations UI in `src/client/panels/OperationsPanel.tsx`
+- [x] T075 [US5] Add audit trail and recovery browser journey in `tests/e2e/operations.spec.ts`
 
 ## Phase 8 — US6 Accessible phone/tablet-first Builder (P3)
 
-- [ ] T076 [P] [US6] Add design-token, focus, contrast, touch-target, reduced-motion, and responsive CSS in `src/client/app.css`
-- [ ] T077 [P] [US6] Add keyboard interaction component tests in `tests/unit/client/keyboard.test.tsx`
-- [ ] T078 [P] [US6] Add phone, tablet portrait, tablet landscape, and desktop viewports in `playwright.config.ts`
-- [ ] T079 [US6] Add automated axe, focus-order, keyboard-trap, and horizontal-overflow checks in `e2e/accessibility.spec.ts`
-- [ ] T080 [US6] Add interactive phone/tablet preview viewport and device-safe-area checks in `e2e/preview.spec.ts`
-- [ ] T081 [US6] Add deterministic API read/save p95 harness and thresholds in `tests/performance/api-performance.test.ts`
-- [ ] T082 [US6] Verify all responsive/accessibility/performance targets via `npm run check:experience`
+- [x] T076 [P] [US6] Add design-token, focus, contrast, touch-target, reduced-motion, and responsive CSS in `src/client/app.css`
+- [x] T077 [P] [US6] Add keyboard interaction component tests in `tests/unit/client/keyboard.test.tsx` and `tests/unit/client/feedback.test.tsx`
+- [x] T078 [P] [US6] Add Chromium, Firefox, WebKit, phone, tablet portrait, tablet landscape, and desktop coverage in `playwright.config.ts` and `tests/e2e/foundation.spec.ts`
+- [x] T079 [US6] Add automated axe, focus-order, keyboard-trap, and horizontal-overflow checks in `tests/e2e/foundation.spec.ts` and `tests/e2e/releases.spec.ts`
+- [x] T080 [US6] Add interactive phone/tablet preview viewport and device-safe-area checks in `tests/e2e/preview.spec.ts`
+- [x] T081 [US6] Add deterministic API read/save p95 harness and thresholds in `tests/performance/api-performance.test.ts`
+- [x] T082 [US6] Verify all responsive/accessibility/performance targets via `npm run check:experience`
 
 ## Phase 9 — Polish, integration, and production delivery
 
-- [ ] T083 [P] Validate `specs/003-complete-builder/contracts/openapi.yaml` and keep route implementations contract-complete
-- [ ] T084 [P] Add production secret/config preflight without revealing values in `scripts/verify-production-config.ts`
-- [ ] T085 [P] Extend live verifier for security headers, safe health, Production ETag/304, public key, asset digest, and no protected anonymous routes in `scripts/verify-live.mjs`
-- [ ] T086 [P] Add dependency, secret, and static-bundle leak checks to `package.json` and `.github/workflows/quality.yml`
-- [ ] T087 Update `README.md`, `docs/architecture.html`, and governance statements for implemented Production behavior
-- [ ] T088 Run format, generated bindings, types, lint, contract, migrations, coverage, build, audit, performance, responsive, accessibility, and full E2E gates with zero unexplained skips
+- [x] T083 [P] Validate `specs/003-complete-builder/contracts/openapi.yaml` and keep route implementations contract-complete
+- [x] T084 [P] Add production secret/config preflight without revealing values in `scripts/verify-production-config.ts`
+- [x] T085 [P] Extend live verifier for security headers, safe health, Production ETag/304, public key, asset digest, and no protected anonymous routes in `scripts/verify-live.mjs`
+- [x] T086 [P] Add dependency, secret, and static-bundle leak checks to `package.json` and `.github/workflows/quality.yml`
+- [x] T087 Update `AGENTS.md`, `docs/README.html`, and `docs/architecture.html` for implemented Production behavior
+- [x] T088 Run format, generated bindings, types, lint, contract, migrations, coverage, build, audit, performance, responsive, accessibility, and full E2E gates with zero unexplained skips
 - [ ] T089 Configure the existing PointSite Builder GitHub App with exact PointApp callback and all-organization repository selection, preserving permissions and existing callbacks
 - [ ] T090 Install PointApp Builder OAuth/session/release-signing secrets and public key identifier without writing or printing secret values
 - [ ] T091 Rehearse and apply the D1 production migration, then verify schema and preserved baseline records

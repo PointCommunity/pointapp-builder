@@ -60,10 +60,9 @@ export async function saveDraftRevision(
 ) {
   const manifest = AppManifestSchema.parse(input.manifest);
   const current = await requireDraft(database, input.draftId);
-  if (
-    JSON.stringify(current.manifest.settings) !== JSON.stringify(manifest.settings) &&
-    !can(input.actor, 'settings:manage')
-  ) {
+  const settingsChanged =
+    JSON.stringify(current.manifest.settings) !== JSON.stringify(manifest.settings);
+  if (settingsChanged && !can(input.actor, 'settings:manage')) {
     throw new ProblemError(
       403,
       'SETTINGS_FORBIDDEN',
@@ -89,6 +88,16 @@ export async function saveDraftRevision(
     outcome: 'succeeded',
     metadata: { draftId: input.draftId, sequence: draft.currentRevision.sequence },
   });
+  if (settingsChanged)
+    await appendAuditEvent(database, {
+      id: crypto.randomUUID(),
+      requestId: input.requestId,
+      actor: input.actor,
+      action: 'settings.update',
+      targetType: 'draft',
+      targetId: input.draftId,
+      outcome: 'succeeded',
+    });
   return draft;
 }
 

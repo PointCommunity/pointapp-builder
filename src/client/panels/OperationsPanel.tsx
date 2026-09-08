@@ -28,10 +28,32 @@ export function OperationsPanel() {
         </div>
       </div>
       <div className="capacity-grid">
+        <article>
+          <strong>{operations.health.status}</strong>
+          <span>service health</span>
+        </article>
+        {Object.entries(operations.health.checks).map(([name, state]) => (
+          <article key={name}>
+            <strong>{state}</strong>
+            <span>{name}</span>
+          </article>
+        ))}
         {Object.entries(operations.capacity).map(([name, value]) => (
           <article key={name}>
             <strong>{value}</strong>
             <span>{name}</span>
+          </article>
+        ))}
+      </div>
+      <h4>Content channels</h4>
+      <div className="channel-grid">
+        {(['staging', 'production'] as const).map((channel) => (
+          <article key={channel}>
+            <small>PointApp {channel}</small>
+            <strong>
+              {operations.channels[channel]?.manifestDigest.slice(0, 12) ?? 'Not published'}
+            </strong>
+            <span>{operations.channels[channel]?.releaseId ?? '—'}</span>
           </article>
         ))}
       </div>

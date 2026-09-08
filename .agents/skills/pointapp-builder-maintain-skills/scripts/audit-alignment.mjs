@@ -74,6 +74,8 @@ requireText(policy, 'PRs #8 and #9 on', policyPath);
 requireText(policy, '<code>codex/oauth-live-fix</code>', policyPath);
 requireText(policy, 'pipeline-adoption PR #10 on', policyPath);
 requireText(policy, '<code>codex/development-pipeline-bootstrap</code>', policyPath);
+requireText(policy, 'PR #11 on', policyPath);
+requireText(policy, '<code>codex/oauth-error-categories</code>', policyPath);
 requireText(
   policy,
   'PointApp Staging and Production remain separate immutable content channels',
@@ -87,6 +89,7 @@ requireText(agents, 'deploy the exact clean `origin/main` revision', 'AGENTS.md'
 requireText(agents, 'PR #7 on `codex/003-complete-builder`', 'AGENTS.md');
 requireText(agents, 'PRs #8 and #9 on `codex/oauth-live-fix`', 'AGENTS.md');
 requireText(agents, 'PR #10 on `codex/development-pipeline-bootstrap`', 'AGENTS.md');
+requireText(agents, 'PR #11 on `codex/oauth-error-categories`', 'AGENTS.md');
 requireText(agents, 'PointApp Staging and Production are immutable content channels', 'AGENTS.md');
 forbidText(policy, 'PointSite', policyPath);
 
@@ -164,6 +167,11 @@ if (!packageJson.scripts?.check?.includes('npm run skills:check')) {
   errors.push('package.json check must include skills:check');
 }
 requireText(qualityWorkflow, 'npm run check', '.github/workflows/quality.yml');
+const checkoutPin = 'uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6';
+const checkoutUses = qualityWorkflow.match(/uses: actions\/checkout@[0-9a-f]{40}[^\n]*/g) ?? [];
+if (checkoutUses.length !== 4 || checkoutUses.some((entry) => entry.trim() !== checkoutPin)) {
+  errors.push('.github/workflows/quality.yml must use the same exact checkout pin in all 4 jobs');
+}
 requireText(qualityWorkflow, "'issue/**'", '.github/workflows/quality.yml');
 requireText(qualityWorkflow, 'trufflesecurity/trufflehog@', '.github/workflows/quality.yml');
 requireText(qualityWorkflow, 'semgrep==', '.github/workflows/quality.yml');

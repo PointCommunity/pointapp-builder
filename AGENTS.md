@@ -21,7 +21,7 @@
 - Keep Status, Priority, Impact, Effort, governed labels, assignee, Issue state, branch, and PR reference aligned. Active Issues are assigned only to `brimdor`; Backlog Issues are open and unassigned.
 - With no requested Issue and no active Issue, rank and recommend the top three Backlog Issues, then wait for PM selection.
 - A request to work an Issue authorizes the complete Builder pipeline through production unless the PM explicitly sets an earlier stopping point. Routine Builder deployment does not require a separate staging, Canary, or production approval.
-- PR #7 on `codex/003-complete-builder`, PRs #8 and #9 on `codex/oauth-live-fix`, and pipeline-adoption PR #10 on `codex/development-pipeline-bootstrap` were opened before this pipeline became active. Those exact PR/branch pairs are the only bootstrap exceptions and may complete without retroactive Issues; no new product work may use the exception.
+- PR #7 on `codex/003-complete-builder`, PRs #8 and #9 on `codex/oauth-live-fix`, pipeline-adoption PR #10 on `codex/development-pipeline-bootstrap`, and PR #11 on `codex/oauth-error-categories` were opened before this pipeline became active. Those exact PR/branch pairs are the only bootstrap exceptions and may complete without retroactive Issues; no new product work may use the exception.
 
 ## Required workflow
 

@@ -55,9 +55,17 @@ const OAuthStateSchema = z.strictObject({
 const TokenSchema = z.object({ access_token: z.string().min(20) });
 
 export class AuthenticationError extends ProblemError {
-  constructor(message = 'Sign in with GitHub to continue') {
-    super(401, 'UNAUTHENTICATED', message);
+  constructor(message = 'Sign in with GitHub to continue', code = 'UNAUTHENTICATED') {
+    super(401, code, message);
     this.name = 'AuthenticationError';
+  }
+}
+
+async function safeJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
   }
 }
 
@@ -318,29 +326,69 @@ export class GitHubApiGateway implements GitHubIdentityGateway {
   }
 
   async exchangeCode(code: string, codeVerifier: string): Promise<GitHubIdentity> {
-    const tokenResponse = await this.fetcher('https://github.com/login/oauth/access_token', {
-      method: 'POST',
-      headers: { accept: 'application/json', 'content-type': 'application/json' },
-      body: JSON.stringify({
-        client_id: this.config.clientId,
-        client_secret: this.config.clientSecret,
-        code,
-        code_verifier: codeVerifier,
-        redirect_uri: `${this.config.builderOrigin}/auth/callback`,
-      }),
-    });
-    if (!tokenResponse.ok) throw new AuthenticationError('GitHub sign-in exchange failed');
-    const token = TokenSchema.parse(await tokenResponse.json()).access_token;
-    const userResponse = await this.fetcher('https://api.github.com/user', {
-      headers: {
-        accept: 'application/vnd.github+json',
-        authorization: `Bearer ${token}`,
-        'user-agent': 'PointApp-Builder',
-        'x-github-api-version': '2022-11-28',
-      },
-    });
-    if (!userResponse.ok) throw new AuthenticationError('GitHub identity could not be verified');
-    const user = GitHubIdentitySchema.parse(await userResponse.json());
+    let tokenResponse: Response;
+    try {
+      tokenResponse = await this.fetcher('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: { accept: 'application/json', 'content-type': 'application/json' },
+        body: JSON.stringify({
+          client_id: this.config.clientId,
+          client_secret: this.config.clientSecret,
+          code,
+          code_verifier: codeVerifier,
+          redirect_uri: `${this.config.builderOrigin}/auth/callback`,
+        }),
+      });
+    } catch {
+      throw new AuthenticationError(
+        'GitHub sign-in is temporarily unavailable',
+        'GITHUB_OAUTH_UNAVAILABLE',
+      );
+    }
+    if (!tokenResponse.ok) {
+      throw new AuthenticationError(
+        'GitHub rejected the sign-in exchange',
+        'GITHUB_OAUTH_EXCHANGE_FAILED',
+      );
+    }
+    const tokenResult = TokenSchema.safeParse(await safeJson(tokenResponse));
+    if (!tokenResult.success) {
+      throw new AuthenticationError(
+        'GitHub rejected the sign-in exchange',
+        'GITHUB_OAUTH_EXCHANGE_REJECTED',
+      );
+    }
+
+    let userResponse: Response;
+    try {
+      userResponse = await this.fetcher('https://api.github.com/user', {
+        headers: {
+          accept: 'application/vnd.github+json',
+          authorization: `Bearer ${tokenResult.data.access_token}`,
+          'user-agent': 'PointApp-Builder',
+          'x-github-api-version': '2022-11-28',
+        },
+      });
+    } catch {
+      throw new AuthenticationError(
+        'GitHub identity is temporarily unavailable',
+        'GITHUB_IDENTITY_UNAVAILABLE',
+      );
+    }
+    if (!userResponse.ok) {
+      throw new AuthenticationError(
+        'GitHub identity could not be verified',
+        'GITHUB_IDENTITY_REJECTED',
+      );
+    }
+    const userResult = GitHubIdentitySchema.safeParse(await safeJson(userResponse));
+    if (!userResult.success) {
+      throw new AuthenticationError(
+        'GitHub returned an invalid identity',
+        'GITHUB_IDENTITY_INVALID',
+      );
+    }
+    const user = userResult.data;
     return {
       id: user.id,
       login: user.login,

@@ -53,6 +53,14 @@ const OAuthStateSchema = z.strictObject({
   exp: z.number().int().positive(),
 });
 const TokenSchema = z.object({ access_token: z.string().min(20) });
+const OAuthExchangeErrorSchema = z.object({
+  error: z.enum([
+    'incorrect_client_credentials',
+    'redirect_uri_mismatch',
+    'bad_verification_code',
+    'unverified_user_email',
+  ]),
+});
 
 export class AuthenticationError extends ProblemError {
   constructor(message = 'Sign in with GitHub to continue', code = 'UNAUTHENTICATED') {
@@ -66,6 +74,37 @@ async function safeJson(response: Response): Promise<unknown> {
     return await response.json();
   } catch {
     return null;
+  }
+}
+
+function rejectedOAuthExchange(payload: unknown): AuthenticationError {
+  const result = OAuthExchangeErrorSchema.safeParse(payload);
+  switch (result.success ? result.data.error : null) {
+    case 'incorrect_client_credentials':
+      return new AuthenticationError(
+        'GitHub rejected the Builder OAuth client credentials',
+        'GITHUB_OAUTH_CLIENT_CREDENTIALS_REJECTED',
+      );
+    case 'redirect_uri_mismatch':
+      return new AuthenticationError(
+        'GitHub rejected the Builder OAuth callback URL',
+        'GITHUB_OAUTH_CALLBACK_REJECTED',
+      );
+    case 'bad_verification_code':
+      return new AuthenticationError(
+        'GitHub rejected the temporary sign-in code',
+        'GITHUB_OAUTH_CODE_REJECTED',
+      );
+    case 'unverified_user_email':
+      return new AuthenticationError(
+        'GitHub requires a verified primary email for sign-in',
+        'GITHUB_OAUTH_EMAIL_UNVERIFIED',
+      );
+    default:
+      return new AuthenticationError(
+        'GitHub rejected the sign-in exchange',
+        'GITHUB_OAUTH_EXCHANGE_REJECTED',
+      );
   }
 }
 
@@ -354,12 +393,10 @@ export class GitHubApiGateway implements GitHubIdentityGateway {
         'GITHUB_OAUTH_EXCHANGE_FAILED',
       );
     }
-    const tokenResult = TokenSchema.safeParse(await safeJson(tokenResponse));
+    const tokenPayload = await safeJson(tokenResponse);
+    const tokenResult = TokenSchema.safeParse(tokenPayload);
     if (!tokenResult.success) {
-      throw new AuthenticationError(
-        'GitHub rejected the sign-in exchange',
-        'GITHUB_OAUTH_EXCHANGE_REJECTED',
-      );
+      throw rejectedOAuthExchange(tokenPayload);
     }
 
     let userResponse: Response;

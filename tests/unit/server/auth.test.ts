@@ -81,8 +81,23 @@ describe('GitHub App OAuth', () => {
 
     await expect(api.exchangeCode('temporary-code', 'pkce-verifier')).rejects.toMatchObject({
       status: 401,
-      code: 'GITHUB_OAUTH_EXCHANGE_REJECTED',
-      message: 'GitHub rejected the sign-in exchange',
+      code: 'GITHUB_OAUTH_CLIENT_CREDENTIALS_REJECTED',
+      message: 'GitHub rejected the Builder OAuth client credentials',
+    });
+  });
+
+  it.each([
+    ['redirect_uri_mismatch', 'GITHUB_OAUTH_CALLBACK_REJECTED'],
+    ['bad_verification_code', 'GITHUB_OAUTH_CODE_REJECTED'],
+    ['unverified_user_email', 'GITHUB_OAUTH_EMAIL_UNVERIFIED'],
+    ['unexpected_upstream_error', 'GITHUB_OAUTH_EXCHANGE_REJECTED'],
+  ])('classifies the safe GitHub OAuth error %s', async (error, expectedCode) => {
+    const api = new GitHubApiGateway(config, (() =>
+      Promise.resolve(Response.json({ error }))) as typeof fetch);
+
+    await expect(api.exchangeCode('temporary-code', 'pkce-verifier')).rejects.toMatchObject({
+      status: 401,
+      code: expectedCode,
     });
   });
 

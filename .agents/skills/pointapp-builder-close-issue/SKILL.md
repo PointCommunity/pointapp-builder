@@ -1,0 +1,17 @@
+---
+name: pointapp-builder-close-issue
+description: 'Complete a verified PointApp Builder Issue by squash-merging its PR, deploying the exact main revision directly to Builder production, verifying live health, and closing the Issue.'
+---
+
+# Close a PointApp Builder Issue
+
+Read `AGENTS.md`, `.agents/pointapp-builder-pipeline-policy.html`, the sole active Issue, PR, exact review evidence, live checks, and current repository state.
+
+1. Require the Issue to be the sole active card in In Review, open, and assigned only to `brimdor`. Confirm the matching PR targets `main`, contains `Refs #<number>` without auto-close syntax, is current and mergeable, has zero unresolved review findings, and passes every GitHub Quality job for its exact head.
+2. Record the reviewed PR head commit and tree, then squash-merge and delete the feature branch when safe. Confirm the resulting `origin/main` tree exactly equals the reviewed tree; stop before deployment if it differs.
+3. Update local `main` without discarding any user-owned work. Require a clean checkout at the exact remote merge commit and wait for every GitHub Quality job on that `main` commit to succeed.
+4. Invoke `pointapp-builder-release-production` with the Issue, PR, reviewed head/tree, merge commit/tree, and Quality evidence. Routine Builder deployment needs no additional staging, Canary, or production approval.
+5. Only after production deployment and live verification succeed, comment concise completion evidence, perform the agent-owned Project transition to Done, verify the enabled automation closes the Issue (or close it directly if the automation does not), remove its assignment, read the Issue and card back, and verify that no active Issue remains.
+6. If merge succeeds but deployment fails, keep the Issue open and assigned and restore Status In Review if a built-in automation changed it. Verify application rollback, then use a reviewable revert commit or same-Issue remediation; never rewrite `main` history.
+
+A merged PR is not completion. Never close the Issue before verified Builder production.

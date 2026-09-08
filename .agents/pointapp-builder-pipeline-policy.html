@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>PointApp Builder Development Pipeline Policy</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0d0e;
+        --panel: #151918;
+        --ink: #f4f0e7;
+        --muted: #b7b0a4;
+        --accent: #d8b76f;
+        --line: #343a37;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        max-width: 980px;
+        margin: auto;
+        padding: 48px 24px 96px;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.65 system-ui,
+          sans-serif;
+      }
+      h1,
+      h2 {
+        font-family: Georgia, serif;
+        font-weight: 500;
+      }
+      h1 {
+        font-size: clamp(2.25rem, 7vw, 3rem);
+      }
+      h2 {
+        margin-top: 40px;
+        color: var(--accent);
+      }
+      p,
+      li,
+      td {
+        color: var(--muted);
+      }
+      code {
+        color: #f0d18c;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+      }
+      th,
+      td {
+        padding: 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PointApp Builder Development Pipeline</h1>
+    <p>
+      This is the shared policy source for repository-owned PointApp Builder workflow skills. It
+      governs development and deployment of the private Builder application, not publication or
+      promotion of PointApp content and not development of the separate native application.
+    </p>
+
+    <h2>Objective and authority</h2>
+    <p>
+      The agent carries one PM-selected GitHub Issue from an approved draft through specification,
+      implementation, review, exact-revision deployment, live verification, and closure. The PM is
+      GitHub user <code>brimdor</code>. Repository instructions and live GitHub/Cloudflare state
+      take precedence over stale assumptions.
+    </p>
+
+    <h2>GitHub Project schema</h2>
+    <table>
+      <tr>
+        <th>Concern</th>
+        <th>Controlled values</th>
+      </tr>
+      <tr>
+        <td>Project</td>
+        <td>
+          Private PointCommunity Project <code>PointApp Builder</code>, number
+          <code>5</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Status</td>
+        <td>Backlog, On Hold, In Progress, In Review, Done</td>
+      </tr>
+      <tr>
+        <td>Active</td>
+        <td>In Progress or In Review; one Issue maximum across both</td>
+      </tr>
+      <tr>
+        <td>Priority</td>
+        <td>P0 critical, P1 high, P2 normal, P3 low</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>High, Medium, Low</td>
+      </tr>
+      <tr>
+        <td>Effort</td>
+        <td>XS, S, M, L, XL</td>
+      </tr>
+      <tr>
+        <td>Labels</td>
+        <td>
+          Exactly one governed <code>type:*</code> label and one or more governed
+          <code>area:*</code> labels
+        </td>
+      </tr>
+      <tr>
+        <td>Completion automation</td>
+        <td>
+          Pull request merged → Done is disabled. Item closed → Done and Done → close Issue remain
+          enabled; the agent sets Done only after verified production.
+        </td>
+      </tr>
+    </table>
+
+    <h2>Repository and environments</h2>
+    <table>
+      <tr>
+        <th>Concern</th>
+        <th>Controlled value</th>
+      </tr>
+      <tr>
+        <td>Source repository</td>
+        <td><code>PointCommunity/pointapp-builder</code>, default branch <code>main</code></td>
+      </tr>
+      <tr>
+        <td>Builder runtime</td>
+        <td>Production only at <code>https://appbuilder.pointatx.org</code></td>
+      </tr>
+      <tr>
+        <td>Builder Staging or Canary</td>
+        <td>None. Do not create or imply one.</td>
+      </tr>
+      <tr>
+        <td>PointApp content channels</td>
+        <td>
+          Immutable Staging and Production manifests managed inside the Builder; never changed by
+          this application-deployment pipeline
+        </td>
+      </tr>
+      <tr>
+        <td>Native PointApp</td>
+        <td>
+          Separate <code>PointCommunity/pointapp</code> product; never read, changed, built, or
+          deployed without explicit authorization
+        </td>
+      </tr>
+    </table>
+
+    <h2>Issue model</h2>
+    <p>
+      Every open Issue belongs to the Project with Status, Priority, Impact, and Effort populated.
+      Backlog cards are open and unassigned. Active means Status In Progress or In Review; exactly
+      one Issue maximum may be active and it is assigned only to <code>brimdor</code>. On Hold is
+      inactive and requires an explicit PM pause. Dependabot pull requests are maintenance
+      automation and do not consume the active slot.
+    </p>
+    <p>
+      PR #7 on <code>codex/003-complete-builder</code>, PR #8 on <code>codex/oauth-live-fix</code>,
+      and its follow-up PR #9 on that same branch were opened before this pipeline became active.
+      Those exact PR/branch pairs are the only bootstrap exceptions and may complete without
+      retroactive Issues. They are reported separately while open; no new work may use this
+      exception.
+    </p>
+
+    <h2>State flow</h2>
+    <ol>
+      <li>
+        The agent researches and shows the complete HTML Issue plus metadata. Only
+        <code>Approved to create this exact GitHub Issue</code> authorizes creation of that draft.
+      </li>
+      <li>
+        The Issue is created open and unassigned, added to the Project, fully classified, and set to
+        Backlog. When the PM selects it, the agent moves it to In Progress, assigns only
+        <code>brimdor</code>, and verifies it is the sole active Issue.
+      </li>
+      <li>
+        The agent works from current <code>origin/main</code> on
+        <code>issue/&lt;number&gt;-&lt;slug&gt;</code>, maintaining appropriate spec, plan, task,
+        test, migration, security, accessibility, and operations evidence.
+      </li>
+      <li>
+        The agent creates a PR with <code>Refs #&lt;number&gt;</code>, completes full review and
+        local browser QA, remediates every finding, requires every GitHub Quality job to pass for
+        the exact head, and moves the verified card to In Review.
+      </li>
+      <li>
+        Unless the PM requested an earlier stop, the agent squash-merges the verified PR, proves the
+        merge tree equals the reviewed tree, and waits for GitHub Quality on the exact
+        <code>origin/main</code> commit.
+      </li>
+      <li>
+        The agent records the current Cloudflare version, applies rehearsed backward-compatible D1
+        migrations when required, runs <code>npm run deploy</code> from the clean exact main
+        revision, and verifies the new Worker version receives 100% traffic.
+      </li>
+      <li>
+        The agent verifies <code>/api/health</code>, D1/authentication/publishing checks, HTTPS
+        redirect preservation, cache-busted HTML and derived assets, anonymous isolation, login
+        initiation, and current signed Production content without changing channel state. Only then
+        does it record evidence, move the card to Done, verify the resulting Issue closure, unassign
+        it, and confirm the active slot is empty.
+      </li>
+    </ol>
+
+    <h2>Agent-owned Project movement</h2>
+    <p>
+      The PM never has to drag a card, select a Status, or repair Project metadata. Human Issue
+      approval, work selection, pause or resume requests, findings, and requested stopping points
+      are decision gates; the agent performs and immediately verifies the corresponding Project
+      transition.
+    </p>
+    <table>
+      <tr>
+        <th>Pipeline event</th>
+        <th>Agent-owned action</th>
+        <th>Required readback</th>
+      </tr>
+      <tr>
+        <td>Approved Issue creation</td>
+        <td>Set Backlog; leave open and unassigned.</td>
+        <td>Status, Priority, Impact, Effort, governed labels, assignment, and inactivity.</td>
+      </tr>
+      <tr>
+        <td>PM selects or resumes work</td>
+        <td>Set In Progress and assign only <code>brimdor</code>.</td>
+        <td>Sole active card and complete aligned metadata.</td>
+      </tr>
+      <tr>
+        <td>PM explicitly pauses work</td>
+        <td>Set On Hold and preserve branch, PR, and evidence.</td>
+        <td>No active slot consumed and resumable state intact.</td>
+      </tr>
+      <tr>
+        <td>Agent QA and exact-head Quality succeed</td>
+        <td>Set In Review.</td>
+        <td>Reviewed commit/tree, PR, checks, assignment, and sole active card.</td>
+      </tr>
+      <tr>
+        <td>A finding changes the candidate</td>
+        <td>Set In Progress before remediation.</td>
+        <td>Earlier review evidence invalidated and a new candidate required.</td>
+      </tr>
+      <tr>
+        <td>Production verifies healthy</td>
+        <td>Close, unassign, and set Done.</td>
+        <td>Release evidence, closed state, Done metadata, and zero active cards.</td>
+      </tr>
+    </table>
+
+    <h2>Commands and gates</h2>
+    <table>
+      <tr>
+        <th>Stage</th>
+        <th>Required command or evidence</th>
+      </tr>
+      <tr>
+        <td>Local quality</td>
+        <td>
+          <code>npm run check</code>, <code>npm run test:performance</code>,
+          <code>npm run test:e2e</code>, focused tests, and <code>git diff --check</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Skill alignment</td>
+        <td><code>npm run skills:check</code></td>
+      </tr>
+      <tr>
+        <td>Pipeline state</td>
+        <td><code>npm run pipeline:health</code></td>
+      </tr>
+      <tr>
+        <td>Cloudflare identity</td>
+        <td><code>npm run cloudflare:verify-account</code></td>
+      </tr>
+      <tr>
+        <td>D1 migration, when applicable</td>
+        <td><code>npm run db:migrate:local</code>, then <code>npm run db:migrate:remote</code></td>
+      </tr>
+      <tr>
+        <td>Production deployment</td>
+        <td><code>npm run deploy</code> from clean exact <code>origin/main</code></td>
+      </tr>
+      <tr>
+        <td>Live verification</td>
+        <td>
+          <code>npm run verify:live</code> plus affected authenticated behavior when available
+        </td>
+      </tr>
+      <tr>
+        <td>Application rollback</td>
+        <td>
+          <code
+            >npx wrangler rollback &lt;recorded-version-id&gt; --message "Rollback failed PointApp
+            Builder release" --yes</code
+          >
+        </td>
+      </tr>
+    </table>
+
+    <h2>Candidate identity</h2>
+    <p>
+      A reviewed candidate is the tuple of Issue, PR URL, exact PR head commit and tree, test
+      evidence, and GitHub Quality run. A released candidate adds the main merge commit and tree,
+      exact-main Quality run, previous and new Cloudflare version IDs, migration evidence,
+      deployment result, and live-verification result. The merge tree must equal the reviewed tree.
+    </p>
+
+    <h2>Direct production and recovery</h2>
+    <p>
+      Builder application work goes directly to its sole production environment after agent QA and
+      exact-main CI. There is no routine second approval and no Builder staging or Canary promotion.
+      PointApp Staging and Production remain separate immutable content channels. Before deployment,
+      record the current 100% Cloudflare version. On runtime failure, roll back to that version and
+      verify recovery. Keep the Issue open and assigned, then make the durable source fix through a
+      reviewable revert or same-Issue remediation. Destructive schema or data recovery always
+      requires PM authorization.
+    </p>
+
+    <h2>GitHub enforcement limitation</h2>
+    <p>
+      GitHub currently rejects branch protection and repository rulesets for this private repository
+      at the organization plan level. Repository skills and deterministic audits enforce the PR,
+      exact-tree, and Quality contract and report this limitation. They never claim unavailable
+      branch rules are active.
+    </p>
+
+    <h2>Boundaries</h2>
+    <ul>
+      <li>Always preserve unrelated user-owned work and use only task-owned commits.</li>
+      <li>Always keep migrations backward compatible with the recorded rollback version.</li>
+      <li>Always verify the exact remote main commit and GitHub Quality before deployment.</li>
+      <li>Never request credentials, expose secrets, or weaken authentication for evidence.</li>
+      <li>Never publish, promote, or roll back PointApp content from this application pipeline.</li>
+      <li>
+        Never read or modify <code>PointCommunity/pointapp</code> without explicit authorization.
+      </li>
+      <li>Never close an Issue after merge alone; verified production is completion.</li>
+    </ul>
+  </body>
+</html>

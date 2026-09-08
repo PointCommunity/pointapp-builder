@@ -1,48 +1,45 @@
-# Internal implementation plan: PointApp Builder foundation
+# Internal implementation plan: PointApp Builder development pipeline
+
+## Objective
+
+Adopt PointSite Builder's proven Project-backed development pipeline without changing PointApp Builder's direct application deployment, immutable Staging-to-Production content contract, or native-app boundary.
 
 ## Dependency graph
 
-Research and product boundary -> content and access contracts -> responsive preview -> Builder shell -> quality gates -> private repository -> isolated Cloudflare hosting.
+Live repository and GitHub evidence -> Project and label contract -> repository policy -> pipeline skills and adapters -> deterministic checks -> CI and package wiring -> full verification and exact-head handoff.
 
-## Phase 1: specification and contracts
+## Architecture decisions
 
-- [x] Record scope, roles, content-delivery model, hosting constraint, and safety boundaries.
-- [x] Add tested role/capability and content-manifest contracts.
+- Use a separate private PointCommunity Project PointApp Builder (#5); never reuse native PointApp Project #3.
+- Preserve exactly one active Issue across In Progress and In Review.
+- Deploy the Builder application directly to appbuilder.pointatx.org; treat PointApp Staging and Production only as signed content channels.
+- Keep .agents/skills canonical, Claude adapters as regular files, and AGENTS as the imported cross-agent authority.
+- Treat PRs #7 through #9 as the only pre-pipeline bootstrap exceptions and reject any later ungoverned PR.
+- Report unavailable private-repository branch protection and enforce exact-tree/Quality requirements through audits.
 
-## Phase 2: first vertical slice
+## Implementation order
 
-- [x] Render one versioned sample manifest in phone and tablet staging frames.
-- [x] Expose separated Builder panels and role-aware release controls in foundation mode.
-- [x] Verify keyboard access, touch target sizes, and 320/768/1024/1280 layouts.
-
-## Phase 3: repository and delivery
-
-- [x] Add format, lint, type, unit, build, browser, and security-oriented CI gates.
-- [x] Record the initial GitHub Pages eligibility constraint before the Cloudflare host was selected.
-- [x] Create and push the private PointCommunity repository.
-- [x] Read back repository visibility, default branch, commit, Actions, and Pages state.
+1. Create and read back the private Project and governed label taxonomy.
+2. Add the PointApp-specific AGENTS and dark-mode pipeline policy/specification.
+3. Add and adapt eight pipeline skills plus five pinned shared frontend skills.
+4. Add cross-agent imports/adapters and skill-alignment validation.
+5. Add failing tests for PointApp health, copied Canary drift, full labels, and the exact PR #7 through PR #9 exceptions; implement until green.
+6. Wire package scripts, CI/security jobs, CODEOWNERS, Dependabot, pre-commit, lint, and format scopes.
+7. Run all local and live read-only verification, review the diff, then commit and push only bootstrap files.
 
 ## Risks
 
-- A public client bundle cannot enforce authorization; all sensitive actions remain disconnected until the Worker API has authenticated, server-side policy.
-- Content updates must remain data-only to comply with native-store executable-code policies.
-- Staging fidelity depends on the future PointApp consuming the same versioned contract.
+- Project-copy drift: validate descriptions, views, workflows, repository link, and zero items.
+- Release-plane confusion: make application deployment and content publication mutually explicit in every authority surface.
+- Current PR conflict: preserve PRs #7 through #9 and audit them as temporary exact exceptions.
+- Vendored skill drift: retain pinned provenance and verify canonical/adaptor registries.
+- User-owned work: remain on the clean existing branch and stage only bootstrap-owned paths.
 
-## Foundation checkpoint
+## Verification checkpoints
 
-All foundation quality gates passed, the exact pushed commit was known, the repository remained private, and no PointApp repository interaction occurred.
-
-## Phase 4: Cloudflare hosting parity
-
-- [x] Verify the live PointSite Builder hosting pattern and Point Community Cloudflare identity.
-- [x] Confirm the dedicated domain `appbuilder.pointatx.org`.
-- [x] Create the isolated `pointapp-builder` D1 database.
-- [x] Add the Worker health and fail-closed API boundary test-first.
-- [x] Replace GitHub Pages configuration and documentation with Cloudflare Worker deployment.
-- [x] Run local quality and browser verification.
-- [x] Commit and push the exact deployment candidate; wait for GitHub Quality.
-- [x] Deploy the exact clean candidate and verify Cloudflare, TLS, health, assets, responsive UI, and console state.
-
-## Hosting checkpoint
-
-The dedicated Worker and D1 binding are live at `appbuilder.pointatx.org`. HTTPS redirection, runtime health, fail-closed routes, compiled assets, phone/tablet layouts, and a clean browser console were verified without enabling authentication or publishing.
+- Focused Node pipeline tests.
+- Skill frontmatter and alignment validation.
+- npm run check, npm run test:performance, npm run test:e2e, and git diff --check.
+- Dark-mode HTML validation and source-specific terminology scans.
+- npm run pipeline:health against live Project #5.
+- Exact pushed-head GitHub Quality readback.

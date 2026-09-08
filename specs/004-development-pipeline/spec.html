@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>PointApp Builder Development Pipeline Specification</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0d0e;
+        --panel: #151918;
+        --ink: #f4f0e7;
+        --muted: #b7b0a4;
+        --accent: #d8b76f;
+        --line: #343a37;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        max-width: 980px;
+        margin: auto;
+        padding: 48px 24px 96px;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.65 system-ui,
+          sans-serif;
+      }
+      h1,
+      h2 {
+        font-family: Georgia, serif;
+        font-weight: 500;
+      }
+      h1 {
+        font-size: clamp(2.25rem, 7vw, 3rem);
+      }
+      h2 {
+        margin-top: 40px;
+        color: var(--accent);
+      }
+      p,
+      li,
+      td {
+        color: var(--muted);
+      }
+      code {
+        color: #f0d18c;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+      }
+      th,
+      td {
+        padding: 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--ink);
+      }
+      pre {
+        overflow: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PointApp Builder Development Pipeline</h1>
+
+    <h2>Objective</h2>
+    <p>
+      Adopt PointSite Builder's current Project-backed development process for
+      <code>PointCommunity/pointapp-builder</code> while preserving PointApp Builder's distinct
+      content-release, security, and native-application boundaries. Success means a private
+      organization Project, one-active-Issue governance, repository-owned cross-agent skills,
+      deterministic audits, complete CI/security gates, and exact-revision direct deployment of the
+      Builder application to <code>https://appbuilder.pointatx.org</code>.
+    </p>
+
+    <h2>Confirmed assumptions and alignment decisions</h2>
+    <ul>
+      <li>
+        The Project owner is <code>PointCommunity</code>; the private Project is
+        <code>PointApp Builder</code>, number <code>5</code>.
+      </li>
+      <li>
+        PointSite Builder Project number 1 is the structural source for fields, views, workflows,
+        labels, skills, adapters, and audit mechanics.
+      </li>
+      <li>
+        The separate PointCommunity Project <code>PointApp</code>, number 3, governs native-app work
+        and is not reused or modified.
+      </li>
+      <li>
+        Both Builder applications deploy directly to one production environment after exact-head
+        review and exact-main CI; PointApp Builder has no application Staging or Canary.
+      </li>
+      <li>
+        PointApp Staging and Production are signed immutable content channels inside the Builder,
+        not Builder deployment environments.
+      </li>
+      <li>
+        PR #7 on <code>codex/003-complete-builder</code>, PR #8 on
+        <code>codex/oauth-live-fix</code>, and its follow-up PR #9 on that same branch predate this
+        Issue pipeline. Those exact PR/branch pairs are its only bootstrap exceptions. No later
+        product work may bypass a governed Issue.
+      </li>
+      <li>
+        This bootstrap changes repository governance and GitHub metadata only; it does not deploy
+        the Builder, publish content, or touch <code>PointCommunity/pointapp</code>.
+      </li>
+    </ul>
+
+    <h2>Technology and code style</h2>
+    <p>
+      The repository remains TypeScript 5.9 on Node.js 22, React 19, Vite 8, Hono, Zod 4, Cloudflare
+      Workers Static Assets, and D1. Scripts use ESM, explicit constants for governed identities,
+      deterministic pure validation functions, and fail-closed errors.
+    </p>
+    <pre><code>const ACTIVE = new Set(['In Progress', 'In Review']);
+
+if (activeItems.length &gt; 1) {
+  errors.push('single-active-Issue violation');
+}</code></pre>
+
+    <h2>GitHub Project contract</h2>
+    <table>
+      <tr>
+        <th>Concern</th>
+        <th>Required configuration</th>
+      </tr>
+      <tr>
+        <td>Status</td>
+        <td>Backlog, On Hold, In Progress, In Review, Done</td>
+      </tr>
+      <tr>
+        <td>Active</td>
+        <td>In Progress or In Review; one Issue maximum across both</td>
+      </tr>
+      <tr>
+        <td>Priority</td>
+        <td>P0, P1, P2, P3</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>High, Medium, Low</td>
+      </tr>
+      <tr>
+        <td>Effort</td>
+        <td>XS, S, M, L, XL</td>
+      </tr>
+      <tr>
+        <td>Views</td>
+        <td>Backlog and Kanban board views grouped by Status</td>
+      </tr>
+      <tr>
+        <td>Built-in workflows</td>
+        <td>
+          Keep item added → Backlog, linked pull request → In Progress, item closed → Done, Done →
+          close Issue, and sub-issue addition enabled. Keep pull request merged → Done disabled
+          because merge alone is not completion.
+        </td>
+      </tr>
+      <tr>
+        <td>Repository</td>
+        <td>Link only <code>PointCommunity/pointapp-builder</code>.</td>
+      </tr>
+    </table>
+    <p>
+      Every open Builder Issue belongs to the Project with populated Status, Priority, Impact, and
+      Effort. Backlog Issues are open and unassigned. Active Issues are assigned only to
+      <code>brimdor</code>. The copied Canary description for In Review is replaced with exact PR
+      candidate language appropriate to direct Builder production.
+    </p>
+
+    <h2>Issue and label model</h2>
+    <p>
+      Each governed Issue has exactly one <code>type:*</code> label and one or more applicable
+      <code>area:*</code> labels. The controlled taxonomy covers bug, feature, maintenance,
+      security, authoring, data, deployment, documentation, identity, media, publishing, UI, and
+      workflow. Existing generic and Dependabot labels remain available for compatibility.
+    </p>
+
+    <h2>State flow</h2>
+    <ol>
+      <li>
+        An explicitly approved HTML Issue draft is created open, unassigned, fully classified, added
+        to the Project, and set to Backlog.
+      </li>
+      <li>PM selection moves the Issue to In Progress and assigns only <code>brimdor</code>.</li>
+      <li>
+        Implementation starts from current <code>origin/main</code> on
+        <code>issue/&lt;number&gt;-&lt;slug&gt;</code>, with specification and tests before
+        behavior.
+      </li>
+      <li>
+        A PR containing <code>Refs #&lt;number&gt;</code> receives full agent QA, local browser
+        verification, and exact-head GitHub Quality before the Issue moves to In Review.
+      </li>
+      <li>
+        Unless the PM requested an earlier stop, the verified PR is squash-merged and its merge tree
+        must equal the reviewed tree.
+      </li>
+      <li>
+        The exact clean <code>origin/main</code> commit must pass GitHub Quality before direct
+        Builder production deployment.
+      </li>
+      <li>
+        Only verified live Builder production permits Project Done, Issue closure, and unassignment.
+      </li>
+      <li>
+        A failed release restores the recorded Cloudflare version and keeps the Issue active for a
+        reviewable fix.
+      </li>
+    </ol>
+
+    <h2>Repository structure</h2>
+    <table>
+      <tr>
+        <th>Path</th>
+        <th>Purpose</th>
+      </tr>
+      <tr>
+        <td><code>AGENTS.md</code></td>
+        <td>Durable repository authority and workflow routing</td>
+      </tr>
+      <tr>
+        <td><code>.agents/pointapp-builder-pipeline-policy.html</code></td>
+        <td>Shared dark-mode pipeline contract</td>
+      </tr>
+      <tr>
+        <td><code>.agents/skills/pointapp-builder-*/</code></td>
+        <td>Eight separate PointApp Builder workflow skills</td>
+      </tr>
+      <tr>
+        <td>
+          <code
+            >.agents/skills/{awesome-design,design-taste-frontend,image-to-code,playwright-cli,web-design-guidelines}/</code
+          >
+        </td>
+        <td>Five pinned shared frontend skills with provenance</td>
+      </tr>
+      <tr>
+        <td><code>.claude/skills/*/SKILL.md</code></td>
+        <td>Regular-file adapters to canonical skills</td>
+      </tr>
+      <tr>
+        <td><code>CLAUDE.md</code> and <code>GEMINI.md</code></td>
+        <td>Imports of <code>AGENTS.md</code></td>
+      </tr>
+      <tr>
+        <td><code>.github/workflows/quality.yml</code></td>
+        <td>Exact-revision quality, browser, dependency, secret, and source-security checks</td>
+      </tr>
+      <tr>
+        <td><code>.pre-commit-config.yaml</code></td>
+        <td>Local Gitleaks secret guard</td>
+      </tr>
+    </table>
+
+    <h2>Commands</h2>
+    <ul>
+      <li>
+        <code>npm run skills:check</code> validates pipeline logic, skill registries, adapters,
+        policy, and helpers.
+      </li>
+      <li>
+        <code>npm run pipeline:health</code> performs a read-only live Git, Issue, Project, PR,
+        label, workflow, and CI audit.
+      </li>
+      <li>
+        <code>npm run check</code> runs skills, formatting, generated types, TypeScript, lint,
+        contracts, migrations, coverage, dependency/source security, build, and bundle security.
+      </li>
+      <li>
+        <code>npm run test:performance</code> and <code>npm run test:e2e</code> remain separate full
+        release gates.
+      </li>
+      <li>
+        <code>npm run deploy</code> verifies Cloudflare identity and production secrets before
+        building and deploying exact clean <code>origin/main</code>.
+      </li>
+      <li>
+        <code>npm run verify:live</code> checks production health, security headers, HTTPS redirect,
+        anonymous isolation, login initiation, derived assets, signed Production content, and ETag
+        revalidation.
+      </li>
+    </ul>
+
+    <h2>Testing strategy</h2>
+    <ul>
+      <li>
+        Use Node tests for positive and negative pipeline snapshots and pure live-verification
+        contracts.
+      </li>
+      <li>
+        Validate every canonical skill and regular-file adapter, including exact registry
+        membership.
+      </li>
+      <li>
+        Run formatting, generated types, TypeScript, lint, contracts, migration tests, coverage,
+        dependency/source/bundle security, build, performance, and Chromium/Firefox/WebKit browser
+        suites.
+      </li>
+      <li>Run the live read-only pipeline audit against Project #5 after GitHub setup.</li>
+      <li>
+        Do not deploy production for this governance bootstrap; production verification remains a
+        future Issue-closure gate.
+      </li>
+    </ul>
+
+    <h2>Boundaries</h2>
+    <ul>
+      <li>
+        <strong>Always:</strong> preserve user-owned work, read back GitHub mutations, verify exact
+        candidate identity, keep migrations rollback-compatible, and keep application deployment
+        separate from content publication.
+      </li>
+      <li>
+        <strong>Ask first:</strong> destructive schema/data recovery, adding another repository to
+        Project #5, introducing a second Builder environment, or changing the native app.
+      </li>
+      <li>
+        <strong>Never:</strong> expose secrets, weaken authentication, close an Issue on merge
+        alone, publish or promote content as part of application deployment, or touch
+        <code>PointCommunity/pointapp</code> without authorization.
+      </li>
+    </ul>
+
+    <h2>Platform limitation</h2>
+    <p>
+      GitHub currently rejects branch protection and repository rulesets for this private repository
+      at the organization plan level. Repository skills and audits therefore enforce the PR,
+      exact-tree, and Quality contract and report the limitation without claiming those unavailable
+      controls are active.
+    </p>
+
+    <h2>One-time bootstrap record</h2>
+    <p>
+      Project #5 and this repository governance are established after PR #7 on
+      <code>codex/003-complete-builder</code>, PR #8 on <code>codex/oauth-live-fix</code>, and its
+      follow-up PR #9 on that same branch were opened. They are the only documented pre-pipeline
+      exceptions and may finish without retroactive Issues. Project #5 begins with zero cards; all
+      later product work must enter through an approved governed Issue.
+    </p>
+
+    <h2>Success criteria</h2>
+    <ul>
+      <li>
+        The private PointApp Builder Project exists under PointCommunity with the exact fields,
+        views, repository link, and five-enabled-workflow completion policy.
+      </li>
+      <li>
+        The In Review description contains no Canary model and the Project begins with zero copied
+        cards.
+      </li>
+      <li>All 13 governed labels exist with their controlled colors.</li>
+      <li>
+        AGENTS, policy, eight workflow skills, five shared skills, 13 adapters, scripts, package
+        commands, pre-commit, CODEOWNERS, Dependabot, and Quality agree.
+      </li>
+      <li>
+        Tests prove valid and invalid pipeline states, including the two exact pre-pipeline PR
+        exceptions.
+      </li>
+      <li>The complete local verification suite and live read-only pipeline audit pass.</li>
+      <li>
+        No Builder deployment, PointApp content mutation, or native PointApp repository access
+        occurs.
+      </li>
+    </ul>
+
+    <h2>Open questions</h2>
+    <p>None. The live repositories and the user's request resolve the bootstrap choices above.</p>
+  </body>
+</html>

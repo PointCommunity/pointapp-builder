@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>PointApp Builder Development Pipeline Plan</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0d0e;
+        --panel: #151918;
+        --ink: #f4f0e7;
+        --muted: #b7b0a4;
+        --accent: #d8b76f;
+        --line: #343a37;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        max-width: 980px;
+        margin: auto;
+        padding: 48px 24px 96px;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.65 system-ui,
+          sans-serif;
+      }
+      h1,
+      h2 {
+        font-family: Georgia, serif;
+        font-weight: 500;
+      }
+      h1 {
+        font-size: clamp(2.25rem, 7vw, 3rem);
+      }
+      h2 {
+        margin-top: 40px;
+        color: var(--accent);
+      }
+      p,
+      li,
+      td {
+        color: var(--muted);
+      }
+      code {
+        color: #f0d18c;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+      }
+      th,
+      td {
+        padding: 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Implementation Plan</h1>
+    <p>
+      This plan establishes governance without deploying the Builder or changing PointApp content.
+    </p>
+    <h2>Dependency order</h2>
+    <ol>
+      <li>
+        Read current PointSite Builder, PointApp Builder, GitHub, Project, PR, label, CI, and
+        runtime configuration.
+      </li>
+      <li>
+        Copy PointSite Builder Project structure without cards; rename, describe, link, and replace
+        Canary-specific status text.
+      </li>
+      <li>Create the PointApp-aligned governed label taxonomy and read it back.</li>
+      <li>
+        Write AGENTS, the shared policy, eight workflow skills, five pinned shared skills, and
+        cross-agent imports/adapters.
+      </li>
+      <li>
+        Add test-first deterministic pipeline and live-verification contracts, including the exact
+        PR #7 through PR #9 bootstrap exceptions.
+      </li>
+      <li>
+        Wire package commands, CODEOWNERS, Dependabot, pre-commit secret scanning, and multi-job
+        GitHub Quality.
+      </li>
+      <li>
+        Run validators, focused tests, formatting, types, lint, contracts, migrations, coverage,
+        security, build, performance, browser tests, and the live read-only audit.
+      </li>
+      <li>
+        Review the final diff, commit only bootstrap files, push the current pre-pipeline branch,
+        and require exact-head GitHub Quality.
+      </li>
+    </ol>
+    <h2>Risks and controls</h2>
+    <table>
+      <tr>
+        <th>Risk</th>
+        <th>Control</th>
+      </tr>
+      <tr>
+        <td>Native PointApp Project or repository is accidentally reused</td>
+        <td>
+          Create separate Project #5 and link only <code>PointCommunity/pointapp-builder</code>.
+        </td>
+      </tr>
+      <tr>
+        <td>Copied Canary vocabulary misstates direct production</td>
+        <td>Replace the In Review description and make the audit reject drift.</td>
+      </tr>
+      <tr>
+        <td>Builder deployment changes content channels</td>
+        <td>
+          Keep application and content release planes explicit in AGENTS, policy, skills, and
+          verification.
+        </td>
+      </tr>
+      <tr>
+        <td>Existing PRs #7 through #9 violate the new Issue invariant</td>
+        <td>
+          Recognize only their exact numbers, branches, and base as temporary audited exceptions.
+        </td>
+      </tr>
+      <tr>
+        <td>Secrets or supply-chain flaws enter the bootstrap</td>
+        <td>
+          Use Gitleaks, TruffleHog, Semgrep, npm audit, pinned actions, and existing bundle/source
+          scans.
+        </td>
+      </tr>
+      <tr>
+        <td>GitHub branch protection is unavailable</td>
+        <td>
+          Report the plan limitation and enforce exact-tree/Quality gates with repository scripts.
+        </td>
+      </tr>
+    </table>
+    <h2>Verification checkpoints</h2>
+    <ul>
+      <li>
+        Project #5 readback matches the exact schema, descriptions, views, workflows, repository
+        link, and zero-card state.
+      </li>
+      <li>All governed labels match controlled names and colors.</li>
+      <li>All eight pipeline skills, five shared skills, 13 adapters, and imports validate.</li>
+      <li>Focused pipeline tests pass before full repository verification.</li>
+      <li>The final pipeline-health audit has no errors and reports only known warnings.</li>
+      <li>The final GitHub Quality run succeeds for the exact pushed head.</li>
+    </ul>
+  </body>
+</html>

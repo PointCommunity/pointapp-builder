@@ -4,7 +4,17 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # typescript-eslint supports TypeScript below 6.1. Revisit after its peer range expands.
+      - dependency-name: typescript
+        versions: ['>=6.1.0']
     groups:
+      react-stack:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
       development-dependencies:
         dependency-type: development
   - package-ecosystem: github-actions

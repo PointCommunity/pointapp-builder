@@ -5,19 +5,16 @@ updates:
     schedule:
       interval: weekly
     ignore:
-      # typescript-eslint supports TypeScript below 6.1. Revisit after its peer range expands.
+      # Keep the documented TypeScript 5.9 toolchain until the TypeScript 6 migration is tested.
       - dependency-name: typescript
-        versions: ['>=6.1.0']
+        versions: ['>=6.0.0']
     groups:
-      react-stack:
-        patterns:
-          - react
-          - react-dom
-          - '@types/react'
-          - '@types/react-dom'
-      development-dependencies:
-        dependency-type: development
+      npm-dependencies:
+        patterns: ['*']
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      workflow-dependencies:
+        patterns: ['*']

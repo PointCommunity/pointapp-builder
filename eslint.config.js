@@ -20,7 +20,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', '.agents/**/*.mjs'],
     languageOptions: { ecmaVersion: 2023, globals: { ...globals.node } },
   },
 );

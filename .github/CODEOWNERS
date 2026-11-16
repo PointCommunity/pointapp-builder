@@ -1,1 +1,9 @@
 * @brimdor
+
+/.agents/ @brimdor
+/.github/ @brimdor
+/migrations/ @brimdor
+/src/content/ @brimdor
+/src/server/ @brimdor
+/worker/ @brimdor
+/wrangler.jsonc @brimdor

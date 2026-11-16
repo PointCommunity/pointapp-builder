@@ -4,10 +4,21 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: '06:57'
+      timezone: America/Chicago
+    open-pull-requests-limit: 5
     groups:
       development-dependencies:
         dependency-type: development
+      production-minor-patch:
+        dependency-type: production
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: '07:07'
+      timezone: America/Chicago
+    open-pull-requests-limit: 3

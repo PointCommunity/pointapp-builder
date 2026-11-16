@@ -64,4 +64,22 @@ describe('session gate', () => {
     );
     expect(screen.getByText('Protected workspace')).toBeVisible();
   });
+
+  it('fails closed when an unexpected session state reaches the client', () => {
+    render(
+      <SessionGate
+        session={{
+          state: 'unexpected' as SessionView['state'],
+          membership: null,
+          capabilities: [],
+        }}
+      >
+        <div>Protected workspace</div>
+      </SessionGate>,
+    );
+    expect(
+      screen.getByRole('heading', { name: /sign-in is temporarily unavailable/i }),
+    ).toBeVisible();
+    expect(screen.queryByText('Protected workspace')).not.toBeInTheDocument();
+  });
 });
